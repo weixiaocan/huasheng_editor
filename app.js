@@ -764,7 +764,12 @@ const editorApp = createApp({
       try {
         const saved = localStorage.getItem('starredStyles');
         if (saved) {
-          this.starredStyles = JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          // 过滤掉已下线的样式（例如旧版本收藏过、后来被删掉的主题）
+          this.starredStyles = Array.isArray(parsed) ? parsed.filter((k) => STYLES[k]) : [];
+          if (this.starredStyles.length !== (Array.isArray(parsed) ? parsed.length : 0)) {
+            localStorage.setItem('starredStyles', JSON.stringify(this.starredStyles));
+          }
         }
       } catch (error) {
         console.error('加载星标样式失败:', error);
@@ -1022,9 +1027,9 @@ const editorApp = createApp({
 
 ### 3. 13 种精美样式
 
-1. **经典公众号系列**：默认、技术、优雅、深度阅读
-2. **传统媒体系列**：杂志、纽约时报、金融时报、Jony Ive
-3. **现代数字系列**：Wired、Medium、Apple、Claude、AI Coder
+1. **经典公众号系列**：默认、技术、深度阅读、晚点
+2. **传统媒体系列**：纽约时报、金融时报、卫报、日経
+3. **现代数字系列**：Medium、Claude、高迪·有机、焦橙文档、档案馆
 
 ### 4. 一键复制
 
