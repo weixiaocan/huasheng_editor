@@ -397,6 +397,79 @@
       justify-content: space-between;
     }
 
+    /* 技术风格变体选择条 */
+    .theme-variant-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 20px;
+      padding: 8px var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface);
+      font-size: 12px;
+    }
+
+    .variant-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .variant-label {
+      color: var(--color-tertiary);
+      font-weight: 500;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    .variant-current {
+      color: var(--color-secondary);
+      margin-left: 2px;
+      white-space: nowrap;
+    }
+
+    .variant-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--color-surface);
+      box-shadow: 0 0 0 1px var(--color-border);
+      cursor: pointer;
+      padding: 0;
+      transition: box-shadow 120ms;
+    }
+
+    .variant-swatch:hover {
+      box-shadow: 0 0 0 1px var(--color-tertiary);
+    }
+
+    .variant-swatch.active {
+      box-shadow: 0 0 0 2px var(--color-primary);
+    }
+
+    .variant-chip {
+      padding: 3px 10px;
+      border: 1px solid var(--color-light-border);
+      border-radius: 6px;
+      background: var(--color-surface);
+      color: var(--color-primary);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 120ms;
+    }
+
+    .variant-chip:hover {
+      border-color: var(--color-accent);
+      background: var(--color-bg);
+    }
+
+    .variant-chip.active {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      color: var(--color-surface);
+    }
+
     .preview-title {
       font-size: 13px;
       font-weight: 500;
@@ -1868,6 +1941,34 @@
           </div>
         </div>
 
+        <!-- 技术风格专属：主色 + 二级标题样式（只在选中技术风格时出现） -->
+        <div v-if="currentStyle === 'wechat-tech'" class="theme-variant-bar">
+          <div class="variant-group">
+            <span class="variant-label">主色</span>
+            <button
+              v-for="(pal, key) in TECH_PALETTES"
+              :key="key"
+              class="variant-swatch"
+              :class="{ active: techPalette === key }"
+              :style="{ background: pal.primary }"
+              :title="pal.name"
+              :aria-label="'主色：' + pal.name"
+              @click="techPalette = key"
+            ></button>
+            <span class="variant-current">{{ TECH_PALETTES[techPalette].name }}</span>
+          </div>
+          <div class="variant-group">
+            <span class="variant-label">二级标题</span>
+            <button
+              v-for="(h2s, key) in TECH_H2_STYLES"
+              :key="key"
+              class="variant-chip"
+              :class="{ active: techH2Style === key }"
+              @click="techH2Style = key"
+            >{{ h2s.name }}</button>
+          </div>
+        </div>
+
         <!-- 公众号预览模式 -->
         <div class="preview-content" ref="previewScroll">
           <div v-if="!renderedContent" class="empty-state">
@@ -2058,7 +2159,7 @@
        会比上面已经 defer 的 markdown-it/vue 先同步执行，app.js 一开头就要用
        window.markdownit 和 Vue，届时还没定义会直接报错。defer 后四个脚本
        仍按文档顺序在 DOMContentLoaded 前依次执行，顺序跟原来一致。 -->
-  <script src="styles.js?v=2" defer></script>
-  <script src="app.js?v=2" defer></script>
+  <script src="styles.js?v=3" defer></script>
+  <script src="app.js?v=3" defer></script>
 </body>
 </html>

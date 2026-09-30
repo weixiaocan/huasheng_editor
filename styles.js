@@ -584,3 +584,86 @@ const STYLES = {
     }
   }
 };
+
+// ===== 技术风格（wechat-tech）变体：主色 + 二级标题样式 =====
+// 只作用于「技术风格」，其他主题不受影响。所有值最终都写成行内样式（公众号不认 CSS 变量/伪元素/计数器）。
+// classic 与原版技术风格逐字一致，作为默认值，老用户切过来看到的还是原样。
+const TECH_PALETTES = {
+  classic: {
+    name: '经典蓝', primary: '#0066cc', primaryDark: '#0052a3', h2Bar: '#00a67d', tint: '#f0f9ff',
+    quoteBar: '#2196f3', quoteBg: '#f5f9fc', h3Bar: '#ff9800', strongBg: '#fff3cd',
+    codeColor: '#d63031', codeBg: '#ffe6e6', numberColor: '#0066cc'
+  },
+  green: {
+    name: '墨绿', primary: '#2f6b55', primaryDark: '#24533f', h2Bar: '#2f6b55', tint: '#eef5f1',
+    quoteBar: '#6f9c89', quoteBg: '#f3f8f5', h3Bar: '#8fb3a2', strongBg: '#e2efe7',
+    codeColor: '#2f6b55', codeBg: '#eaf3ee', numberColor: '#9dbdae'
+  },
+  brick: {
+    name: '砖红', primary: '#a24a3c', primaryDark: '#83392e', h2Bar: '#a24a3c', tint: '#f9f0ed',
+    quoteBar: '#c58676', quoteBg: '#fbf5f3', h3Bar: '#d0a08f', strongBg: '#f5e2dc',
+    codeColor: '#a24a3c', codeBg: '#f7ebe7', numberColor: '#d9aa9d'
+  },
+  purple: {
+    name: '深紫', primary: '#5a4a8c', primaryDark: '#463a70', h2Bar: '#5a4a8c', tint: '#f2f0f8',
+    quoteBar: '#8a7cb5', quoteBg: '#f6f5fa', h3Bar: '#a79dc8', strongBg: '#e8e4f3',
+    codeColor: '#5a4a8c', codeBg: '#efedf7', numberColor: '#b3a9d3'
+  },
+  amber: {
+    name: '琥珀', primary: '#946326', primaryDark: '#774f1e', h2Bar: '#946326', tint: '#faf4ea',
+    quoteBar: '#c19a63', quoteBg: '#fcf8f1', h3Bar: '#d1b384', strongBg: '#f5e8cf',
+    codeColor: '#8a5a20', codeBg: '#f7efe1', numberColor: '#d8bf96'
+  },
+  slate: {
+    name: '藏青', primary: '#2d4a6a', primaryDark: '#213a55', h2Bar: '#2d4a6a', tint: '#eef2f6',
+    quoteBar: '#6d839c', quoteBg: '#f4f6f9', h3Bar: '#93a4b8', strongBg: '#e3e9f0',
+    codeColor: '#2d4a6a', codeBg: '#ebf0f5', numberColor: '#a3b3c6'
+  }
+};
+
+const TECH_H2_STYLES = {
+  bar: { name: '左竖条' },
+  number: { name: '编号式' },
+  underline: { name: '下划线' },
+  block: { name: '底色块' }
+};
+
+function buildTechStyles(paletteKey, h2Key) {
+  const c = TECH_PALETTES[paletteKey] || TECH_PALETTES.classic;
+  const h2Font = 'font-size: 22px; font-weight: 700; line-height: 1.3 !important; ';
+  const h2Base = 'font-size: 22px; font-weight: 700; color: #1a1a1a !important; line-height: 1.3 !important; ';
+  const h2 = {
+    bar: h2Base + `margin: 32px 0 16px; padding-left: 16px; padding-top: 4px; padding-bottom: 4px; border-left: 5px solid ${c.h2Bar}; background: linear-gradient(to right, ${c.tint} 0%, transparent 100%);`,
+    // 编号数字由 app.js 作为真实文本插入（<span> 块），这里只给标题本体
+    number: h2Base + 'margin: 40px 0 18px; padding: 0;',
+    // 下划线由 app.js 插入的内层 <span> 画出主色短线，标题本体画一条浅色全宽底线
+    underline: h2Base + `margin: 36px 0 18px; padding: 0; border-bottom: 1px solid #e6e6e6;`,
+    block: h2Font + `color: ${c.primaryDark} !important; margin: 32px 0 16px; padding: 10px 16px; background-color: ${c.tint} !important; border-radius: 6px;`
+  }[h2Key] || null;
+
+  return {
+    container: 'max-width: 740px; margin: 0 auto; padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.75 !important; color: #2c3e50 !important; background-color: #fff !important; word-wrap: break-word;',
+    h1: `font-size: 26px; font-weight: 700; color: #1a1a1a !important; line-height: 1.3 !important; margin: 36px 0 18px; padding: 0 0 12px; border-bottom: 3px solid ${c.primary};`,
+    h2: h2 || (h2Base + `margin: 32px 0 16px; padding-left: 16px; padding-top: 4px; padding-bottom: 4px; border-left: 5px solid ${c.h2Bar}; background: linear-gradient(to right, ${c.tint} 0%, transparent 100%);`),
+    h3: `font-size: 20px; font-weight: 600; color: #2c3e50 !important; line-height: 1.4 !important; margin: 28px 0 14px; padding-left: 12px; border-left: 3px solid ${c.h3Bar};`,
+    h4: 'font-size: 18px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 24px 0 12px;',
+    h5: 'font-size: 17px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 20px 0 10px;',
+    h6: 'font-size: 16px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 18px 0 9px;',
+    p: 'margin: 18px 0 !important; line-height: 1.8 !important; color: #3a3a3a !important;',
+    strong: `font-weight: 700; color: #1a1a1a !important; background-color: ${c.strongBg} !important; padding: 2px 4px; border-radius: 8px;`,
+    em: 'font-style: italic; color: #666 !important;',
+    a: `color: ${c.primary} !important; text-decoration: none; border-bottom: 1px solid ${c.primary};`,
+    ul: 'margin: 18px 0; padding-left: 28px;',
+    ol: 'margin: 18px 0; padding-left: 28px;',
+    li: 'margin: 10px 0; line-height: 1.8 !important; color: #3a3a3a !important;',
+    blockquote: `margin: 16px 0; padding: 8px 16px; background-color: ${c.quoteBg} !important; border-left: 3px solid ${c.quoteBar}; color: #555 !important; line-height: 1.5 !important;`,
+    code: `font-family: "Fira Code", Consolas, Monaco, "Courier New", monospace; font-size: 14px; padding: 3px 6px; background-color: ${c.codeBg} !important; color: ${c.codeColor} !important; border-radius: 8px; font-weight: 500;`,
+    pre: 'margin: 24px 0; padding: 20px; background-color: #1e1e1e !important; border-radius: 8px; overflow-x: auto; line-height: 1.6 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
+    hr: `margin: 36px 0; border: none; height: 2px; background: linear-gradient(to right, transparent, ${c.primary}, transparent);`,
+    img: 'max-width: 100%; max-height: 600px !important; height: auto; display: block; margin: 24px auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
+    table: 'width: 100%; margin: 24px 0; border-collapse: collapse; font-size: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);',
+    th: `background-color: ${c.primary} !important; color: #fff !important; padding: 12px; text-align: left; border: 1px solid ${c.primaryDark}; font-weight: 600;`,
+    td: 'padding: 12px; border: 1px solid #e0e0e0; background-color: #fff !important;',
+    tr: 'border-bottom: 1px solid #e0e0e0;',
+  };
+}

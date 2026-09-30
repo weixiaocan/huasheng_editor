@@ -578,6 +578,11 @@ const editorApp = createApp({
       md: null,
       scanDelimsPatched: false,
       STYLES: STYLES,  // 将样式对象暴露给模板
+      // 技术风格（wechat-tech）专属变体：主色 + 二级标题样式
+      TECH_PALETTES: TECH_PALETTES,
+      TECH_H2_STYLES: TECH_H2_STYLES,
+      techPalette: 'classic',
+      techH2Style: 'bar',
       turndownService: null,  // Turndown 服务实例
       isDraggingOver: false,  // 拖拽状态
       imageHostManager: new ImageHostManager(),  // 图床管理器（已废弃，保留兼容）
@@ -640,6 +645,7 @@ const editorApp = createApp({
 
     // 加载「含 GIF」开关偏好
     this.loadIncludeGif();
+    this.loadTechVariant();
 
     // 加载用户偏好设置
     this.loadUserPreferences();
@@ -753,6 +759,14 @@ const editorApp = createApp({
       // 保存样式偏好
       this.saveUserPreferences();
     },
+    techPalette(val) {
+      if (this.md) this.renderMarkdown();
+      try { localStorage.setItem('techPalette', val); } catch (e) {}
+    },
+    techH2Style(val) {
+      if (this.md) this.renderMarkdown();
+      try { localStorage.setItem('techH2Style', val); } catch (e) {}
+    },
     markdownInput(newVal, oldVal) {
       if (this.md) {
         this.renderMarkdown();
@@ -785,6 +799,47 @@ const editorApp = createApp({
         console.error('加载星标样式失败:', error);
         this.starredStyles = [];
       }
+    },
+
+    loadTechVariant() {
+      try {
+        const palette = localStorage.getItem('techPalette');
+        if (palette && TECH_PALETTES[palette]) this.techPalette = palette;
+        const h2 = localStorage.getItem('techH2Style');
+        if (h2 && TECH_H2_STYLES[h2]) this.techH2Style = h2;
+      } catch (e) {}
+    },
+
+    // 当前主题的样式表；技术风格按所选主色/二级标题样式现算
+    getActiveStyles() {
+      if (this.currentStyle === 'wechat-tech') {
+        return buildTechStyles(this.techPalette, this.techH2Style);
+      }
+      return STYLES[this.currentStyle].styles;
+    },
+
+    // 技术风格二级标题的结构性装饰：编号/下划线必须是真实节点+行内样式（公众号不支持伪元素和计数器）
+    decorateTechHeadings(doc) {
+      if (this.currentStyle !== 'wechat-tech') return;
+      const c = TECH_PALETTES[this.techPalette] || TECH_PALETTES.classic;
+      const h2s = doc.querySelectorAll('h2');
+      h2s.forEach((h2, i) => {
+        if (this.techH2Style === 'number') {
+          const num = doc.createElement('span');
+          num.setAttribute('style',
+            'display: block; font-size: 36px; font-weight: 800; line-height: 1; margin: 0 0 8px; ' +
+            `color: ${c.numberColor} !important; letter-spacing: 1px; ` +
+            'font-family: "DIN Alternate", "Helvetica Neue", Arial, sans-serif;');
+          num.textContent = String(i + 1).padStart(2, '0');
+          h2.insertBefore(num, h2.firstChild);
+        } else if (this.techH2Style === 'underline') {
+          const inner = doc.createElement('span');
+          inner.setAttribute('style',
+            `display: inline-block; padding: 0 0 8px; margin-bottom: -1px; border-bottom: 3px solid ${c.primary};`);
+          while (h2.firstChild) inner.appendChild(h2.firstChild);
+          h2.appendChild(inner);
+        }
+      });
     },
 
     loadIncludeGif() {
@@ -1446,7 +1501,7 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     applyInlineStyles(html) {
-      const style = STYLES[this.currentStyle].styles;
+      const style = this.getActiveStyles();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const headingInlineOverrides = {
@@ -1513,6 +1568,8 @@ const markdown = \`![图片](img://\${imageId})\`;
           node.setAttribute('style', sanitizedStyle + '; ' + override);
         });
       });
+
+      this.decorateTechHeadings(doc);
 
       // 修复首行顶部多余空隙：首个块级元素的上外边距与容器 padding 不折叠，
       // 会让正文像凭空多了一行空行（晚点等大 margin 标题尤其明显）。这里把首元素上边距归零。
