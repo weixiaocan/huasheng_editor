@@ -818,7 +818,7 @@ const editorApp = createApp({
       return STYLES[this.currentStyle].styles;
     },
 
-    // 技术风格二级标题的结构性装饰：编号/下划线必须是真实节点+行内样式（公众号不支持伪元素和计数器）
+    // 技术风格的结构性装饰（二级标题编号/下划线、引用大引号）：编号/下划线必须是真实节点+行内样式（公众号不支持伪元素和计数器）
     decorateTechHeadings(doc) {
       if (this.currentStyle !== 'wechat-tech') return;
       const c = TECH_PALETTES[this.techPalette] || TECH_PALETTES.classic;
@@ -835,10 +835,23 @@ const editorApp = createApp({
         } else if (this.techH2Style === 'underline') {
           const inner = doc.createElement('span');
           inner.setAttribute('style',
-            `display: inline-block; padding: 0 0 8px; margin-bottom: -1px; border-bottom: 3px solid ${c.primary};`);
+            `display: inline-block; min-width: 72px; padding: 0 0 10px; margin-bottom: -1px; border-bottom: 4px solid ${c.primary};`);
           while (h2.firstChild) inner.appendChild(h2.firstChild);
           h2.appendChild(inner);
         }
+      });
+      // 引用块开头插入主色大引号（真实文本，不用伪元素）
+      doc.querySelectorAll('blockquote').forEach((bq) => {
+        const mark = doc.createElement('span');
+        mark.setAttribute('style',
+          'display: block; font-size: 48px; font-weight: 700; line-height: 1; height: 26px; margin: 0; ' +
+          `color: ${c.primary} !important; font-family: Georgia, "Times New Roman", serif;`);
+        mark.textContent = '\u201C';
+        const first = bq.firstElementChild;
+        if (first && first.tagName === 'P') {
+          first.setAttribute('style', (first.getAttribute('style') || '') + '; margin-top: 6px !important;');
+        }
+        bq.insertBefore(mark, bq.firstChild);
       });
     },
 
