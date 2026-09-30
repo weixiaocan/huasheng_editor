@@ -1,207 +1,78 @@
-# 公众号 Markdown 编辑器
+# 维小灿的公众号排版器
 
-<p align="center">
-  <img src="assets/hero.gif" alt="huasheng_editor Hero Animation" />
-  <br/>
-  <sub>动画由 <a href="https://github.com/alchaincyf/huashu-design">huashu-design</a> skill 制作</sub>
-</p>
+把 Markdown 一键排版成微信公众号富文本：左边写，右边实时预览，点「复制到公众号」直接粘进后台。
 
-<div align="center">
-  <img src="logo.svg" width="120" height="120" alt="公众号 Markdown 编辑器">
+👉 在线使用：**<https://weixiaocan.github.io/huasheng_editor/>**
 
-  一个专为微信公众号设计的 Markdown 编辑器
+![界面截图：技术风格 · 墨绿 · 编号式二级标题](assets/screenshot.png)
 
-  [![在线体验](https://img.shields.io/badge/在线体验-editor.huasheng.ai-0066FF?style=for-the-badge)](https://editor.huasheng.ai/)
-  [![GitHub](https://img.shields.io/badge/GitHub-源代码-000?style=for-the-badge&logo=github)](https://github.com/alchaincyf/huasheng_editor)
-  [![知识星球](https://img.shields.io/badge/知识星球-AI编程-ff6b6b?style=for-the-badge)](https://wx.zsxq.com/group/48888144124288)
-</div>
+> 本项目基于 [花生 alchaincyf/huasheng_editor](https://github.com/alchaincyf/huasheng_editor)（MIT）改编。
+> 感谢原作者开源了这么好用的编辑器，大部分功能都来自原项目。
 
-## 🌟 在线体验
+## 我改了什么
 
-👉 **[https://editor.huasheng.ai/](https://editor.huasheng.ai/)**
+写公众号时我一直用原版编辑器，用得最多的是「技术风格」，但有两个地方一直不顺手，于是 fork 过来按自己的需要改了改：
 
-## ✨ 功能特点
+### 1. 修复左右滚动同步
 
-### 🎨 13 种精美样式
-- **经典公众号系列**：默认、技术、优雅、深度阅读
-- **传统媒体系列**：杂志风格、纽约时报、金融时报、Jony Ive
-- **现代数字系列**：Wired 连线、Medium 长文、Apple 极简、Anthropic Claude、AI Coder 特调
+原来编辑区和预览区的滚动会互相拉扯：滚轮一滚就被拽回去，拖滚动条会来回跳，边写边对照预览很难受。
 
-### 📸 智能图片处理（⭐ 最新升级）
-- **智能粘贴**：支持从任何地方粘贴图片（截图、浏览器、文件管理器）
-- **自动压缩**：图片自动压缩到合理大小（最高压缩 80%+）
-- **本地存储**：使用 IndexedDB 持久化存储，刷新不丢失
-- **编辑友好**：编辑器中使用短链接（`img://img-xxx`），不会卡顿
-- **多图网格**：2-3 列自动排版，类似朋友圈
-- **完美兼容**：复制到公众号时自动转 Base64
+- 两侧改为同一张「锚点对」映射表正反插值（textarea 用镜像元素测量真实换行位置），两个方向互为反函数，不再打架
+- 只让用户正在操作的一侧驱动另一侧，程序触发的滚动一律不回传
+- 预览重新渲染、图片加载、窗口尺寸变化后自动重新对齐，打字时预览不跳
+- 滚动条加宽加深，更容易看见和拖动
 
-### 🚀 强大功能
-- **实时预览**：左侧编辑，右侧即时查看效果
-- **一键复制**：直接粘贴到公众号编辑器，格式完美保留
-- **智能粘贴**：支持从飞书、Notion、Word 等富文本应用直接粘贴
-- **图片拖拽**：支持拖拽图片文件到编辑器
-- **样式收藏**：收藏常用样式，快速切换
-- **文件上传**：支持 .md / .markdown 文件
-- **代码高亮**：优雅的代码块展示，支持多种语言
-- **响应式设计**：完美适配桌面、平板、手机
+### 2. 技术风格可以「每篇不一样」
 
-## 📖 使用指南
+原来的技术风格每篇文章都长一个样。现在选中技术风格后，预览上方会出现一条选择栏：
 
-### 快速开始
-1. 访问 [在线编辑器](https://editor.huasheng.ai/)
-2. 在左侧输入或粘贴 Markdown 内容
-3. 选择喜欢的样式主题
-4. 点击「复制到公众号」
-5. 粘贴到微信公众号编辑器
+- **6 套主色**：经典蓝（默认，与原版一致）、墨绿、砖红、深紫、琥珀、藏青。标题、加粗、链接、引用、行内代码、分割线、表头都会跟着变，正文保持深灰
+- **4 种二级标题**：左竖条（原版）、编号式（自动 01 / 02 / 03）、下划线、底色块
+- **新的引用样式**：不再用左竖条（避免和二级标题撞车），改为浅底圆角 + 主色大引号「“」
+- 选择会记在浏览器里，下次打开还是上次的搭配
 
-### 本地运行
+所有装饰都写成内联样式和真实文本节点（不用 CSS 变量、伪元素、计数器），复制到公众号后样式照样保留。
+
+### 3. 其他
+
+- 去掉了原项目的推广位和统计代码，页面标识改为本 fork
+
+## 原有功能（来自原项目）
+
+- 20 种排版样式，可收藏常用样式
+- 实时预览、一键复制到公众号 / X
+- 智能粘贴：从飞书、Notion、Word 等直接粘贴，自动转成 Markdown
+- 图片粘贴 / 拖拽，自动压缩并存入 IndexedDB，复制时转 Base64；多图自动网格排版
+- 支持上传 .md / .markdown 文件，文章历史记录
+
+## 技术要点
+
+- 纯前端静态页面，无构建步骤：Vue 3 + markdown-it
+- 所有样式最终转为内联样式，兼容公众号编辑器的过滤规则
+- 部署在 GitHub Pages，推送到 `master` 即自动更新
+
+## 本地运行
+
 ```bash
-# 克隆仓库
-git clone https://github.com/alchaincyf/huasheng_editor.git
-
-# 进入目录
+git clone https://github.com/weixiaocan/huasheng_editor.git
 cd huasheng_editor
-
-# 启动本地服务器（Python）
 python3 -m http.server 8080
-
-# 或使用提供的脚本
-./start.sh
-
-# 访问 http://localhost:8080
+# 浏览器打开 http://localhost:8080
 ```
 
-## 🛠️ 技术栈
-
-- **Vue 3** - 渐进式前端框架
-- **Markdown-it** - 强大的 Markdown 解析器
-- **Highlight.js** - 代码语法高亮
-- **IndexedDB** - 本地图片持久化存储
-- **Canvas API** - 客户端图片压缩
-- **Turndown** - HTML 转 Markdown（智能粘贴）
-- **纯 CSS** - 无需构建工具，开箱即用
-
-## 📂 项目结构
+## 项目结构
 
 ```
-公众号编辑器/
-├── index.html        # 主页面
-├── app.js           # Vue 应用逻辑
-├── styles.js        # 13 种样式主题配置
-├── icon.svg         # 项目图标
-├── favicon.svg      # 网站图标
-├── logo.svg         # Logo 图标
-├── start.sh         # 启动脚本
-├── README.md        # 项目说明
-├── CLAUDE.md        # 技术文档
-└── LICENSE          # 开源许可证
+├── index.html   # 页面结构与界面样式
+├── app.js       # Vue 应用逻辑（渲染、滚动同步、复制等）
+├── styles.js    # 排版主题（含技术风格的主色 / 二级标题变体）
+├── vendor/      # Vue、markdown-it 等第三方库
+└── assets/      # 截图等资源
 ```
 
-## 💡 核心特性
+## 开源协议与致谢
 
-### ⭐ 图片处理系统（最新升级）
+本项目沿用 [MIT License](LICENSE)，保留原作者版权声明：
 
-**技术架构**：
-```
-用户粘贴图片
-    ↓
-Canvas API 压缩（最大 1920px，质量 85%）
-    ↓
-IndexedDB 持久化存储
-    ↓
-编辑器显示短链接（img://img-xxx）
-    ↓
-预览区从 IndexedDB 加载显示
-    ↓
-复制时自动转 Base64
-```
-
-**核心优势**：
-- ✅ **100% 成功率**：不依赖外部图床，完全本地化
-- ✅ **编辑器流畅**：短链接不会造成卡顿
-- ✅ **刷新不丢失**：IndexedDB 持久化存储
-- ✅ **智能压缩**：平均压缩 50%-80%
-- ✅ **跨平台支持**：支持截图、浏览器、文件管理器等所有粘贴来源
-
-**多图网格布局**：
-- 连续 2 张图片：并排两列展示
-- 连续 3 张图片：一行三列展示
-- 连续 4 张图片：2×2 网格
-- 5 张及以上：3 列网格布局
-
-### 公众号完美兼容
-- ✅ 自动将 CSS Grid 转换为 Table 布局
-- ✅ 所有样式转为内联样式
-- ✅ 图片自动转 Base64
-- ✅ 强制样式优先级（!important）
-
-### 推荐样式
-带有 ✨ 标识的样式是特别推荐的：
-- **Anthropic Claude** - 优雅的技术文档风格
-- **金融时报** - 专业的财经风格
-- **纽约时报** - 经典的新闻风格
-- **技术风格** - 程序员最爱
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-### 如何贡献
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启一个 Pull Request
-
-### 添加新样式
-1. 在 `styles.js` 中添加新的样式配置
-2. 确保包含所有必需的元素样式
-3. 测试各种 Markdown 元素的渲染效果
-4. 提交 PR 并附上效果截图
-
-## 👨‍💻 作者
-
-**花生** (alchaincyf)
-- 📧 邮箱：[alchaincyf@gmail.com](mailto:alchaincyf@gmail.com)
-- 🌟 知识星球：[AI编程：从入门到精通](https://wx.zsxq.com/group/48888144124288)
-- 💻 GitHub：[@alchaincyf](https://github.com/alchaincyf)
-
-## 🎓 知识星球
-
-本项目是我为知识星球「**AI编程：从入门到精通**」的用户开源的工具。
-
-在星球里，你可以：
-- 🚀 学习 AI 编程最佳实践
-- 💡 获取更多开源项目
-- 🤝 与同好交流技术
-- 📚 获得系统化的学习路径
-
-👉 [加入知识星球](https://wx.zsxq.com/group/48888144124288)
-
-## 📄 开源协议
-
-本项目基于 [MIT License](LICENSE) 开源。
-
-你可以自由地：
-- ✅ 商业使用
-- ✅ 修改
-- ✅ 分发
-- ✅ 私有使用
-
-## 🙏 致谢
-
-- 感谢所有贡献者和使用者
-- 感谢知识星球的朋友们的支持
-- 特别感谢 Claude 在项目开发中的协助
-
-## 📊 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=alchaincyf/huasheng_editor&type=Date)](https://star-history.com/#alchaincyf/huasheng_editor&Date)
-
----
-
-<div align="center">
-  Made with ❤️ by <a href="https://github.com/alchaincyf">花生</a>
-  <br>
-  如果觉得有用，请给个 ⭐️ Star 支持一下！
-</div>
+- 原项目：[alchaincyf/huasheng_editor](https://github.com/alchaincyf/huasheng_editor)，作者 花生（alchaincyf）
+- 本 fork 的修改：[维小灿（weixiaocan）](https://github.com/weixiaocan)

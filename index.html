@@ -3,17 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>公众号排版器</title>
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5FTJSWC1Z5"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-5FTJSWC1Z5');
-  </script>
+  <title>维小灿的公众号排版器</title>
+  <meta name="description" content="维小灿的公众号排版器：Markdown 一键排版成微信公众号富文本。基于花生 alchaincyf/huasheng_editor（MIT）改编。">
+  <meta name="author" content="维小灿 (weixiaocan)">
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -120,6 +112,18 @@
 
     .creator-info a:hover {
       opacity: 0.7;
+    }
+
+    .origin-credit {
+      font-size: 12px;
+      color: var(--color-tertiary);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color 120ms;
+    }
+
+    .origin-credit:hover {
+      color: var(--color-accent);
     }
 
     .github-link {
@@ -1708,18 +1712,18 @@
           <path d="M6 10 L6 22 L9 22 L9 15 L13 20 L17 15 L17 22 L20 22 L20 10 L16 10 L13 14 L10 10 Z" fill="white"/>
           <rect x="6" y="24" width="20" height="2" rx="1" fill="white" opacity="0.7"/>
         </svg>
-        <span>公众号排版器</span>
-        <span class="creator-info">Created by <a href="https://huasheng.ai" target="_blank" rel="noopener noreferrer">花生</a></span>
+        <span>维小灿的公众号排版器</span>
+        <span class="creator-info">Modified by <a href="https://github.com/weixiaocan" target="_blank" rel="noopener noreferrer">维小灿</a></span>
       </div>
       <div class="header-actions">
         <nav class="header-links">
-          <!-- 宣传链接已暂时注释关闭；需恢复时取消下方注释即可 -->
-          <!--
-          <a class="header-link" href="https://www.bookai.top" target="_blank" rel="noopener noreferrer">BookAI 主站</a>
-          <a class="header-link primary" href="https://nf.video/o9jj0s" target="_blank" rel="noopener noreferrer">AI产品购买</a>
-          -->
+          <a class="origin-credit"
+             href="https://github.com/alchaincyf/huasheng_editor"
+             target="_blank"
+             rel="noopener noreferrer"
+             title="原项目：花生 alchaincyf/huasheng_editor，MIT 协议">基于 花生 alchaincyf/huasheng_editor（MIT）改编</a>
         </nav>
-        <a href="https://github.com/alchaincyf/huasheng_editor"
+        <a href="https://github.com/weixiaocan/huasheng_editor"
            target="_blank"
            rel="noopener noreferrer"
            class="github-link"
@@ -2077,77 +2081,6 @@
     <!-- 侧边栏遮罩层 -->
     <div class="history-overlay" :class="{ visible: showHistoryPanel }" @click="toggleHistoryPanel"></div>
 
-    <!-- 右下角浮动广告（已暂时注释关闭；需恢复时取消本块外层注释即可） -->
-    <!-- AD-DISABLED-START
-    <div v-if="floatingAd.isVisible" class="floating-ad">
-      折叠状态
-      <div v-if="!floatingAd.isExpanded" class="floating-ad__collapsed" @click="toggleFloatingAd">
-        <div class="floating-ad__collapsed-content">
-          <span class="floating-ad__collapsed-icon">{{ currentFloatingAd.icon }}</span>
-          <div class="floating-ad__collapsed-text">
-            <span class="floating-ad__collapsed-title">{{ currentFloatingAd.title }}</span>
-            <span class="floating-ad__collapsed-tag" :class="`floating-ad__tag--${currentFloatingAd.tagColor}`">
-              {{ currentFloatingAd.tag }}
-            </span>
-          </div>
-        </div>
-        <button class="floating-ad__close" @click.stop="closeFloatingAd" aria-label="关闭">
-          ×
-        </button>
-      </div>
-
-      展开状态
-      <div v-else class="floating-ad__panel">
-        <div class="floating-ad__panel-header">
-          <span class="floating-ad__panel-title">🔥 热门推荐</span>
-          <button class="floating-ad__collapse" @click="toggleFloatingAd" aria-label="收起">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="floating-ad__list">
-          <div
-            v-for="ad in floatingAd.ads"
-            :key="ad.id"
-            class="floating-ad__item"
-            @click="openFloatingAd(ad)"
-          >
-            <span class="floating-ad__icon">{{ ad.icon }}</span>
-            <div class="floating-ad__info">
-              <div class="floating-ad__header">
-                <span class="floating-ad__title">{{ ad.title }}</span>
-                <span class="floating-ad__tag" :class="`floating-ad__tag--${ad.tagColor}`">
-                  {{ ad.tag }}
-                </span>
-              </div>
-              <span class="floating-ad__subtitle">{{ ad.subtitle }}</span>
-              <span v-if="ad.coupon" class="floating-ad__coupon">优惠码: {{ ad.coupon }}</span>
-            </div>
-            <svg class="floating-ad__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </div>
-
-        <button class="floating-ad__close-expanded" @click="closeFloatingAd">
-          暂时不需要
-        </button>
-      </div>
-
-      轮播指示器
-      <div v-if="!floatingAd.isExpanded" class="floating-ad__indicators">
-        <span
-          v-for="(ad, idx) in floatingAd.ads"
-          :key="ad.id"
-          class="floating-ad__indicator"
-          :class="{ active: idx === floatingAd.currentIndex }"
-          @click.stop="setFloatingAdIndex(idx)"
-        ></span>
-      </div>
-    </div>
-    AD-DISABLED-END -->
 
     <!-- Toast 提示 -->
     <div v-if="toast.show" class="toast" :class="toast.type">
