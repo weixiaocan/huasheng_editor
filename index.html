@@ -1159,9 +1159,10 @@
     }
 
     /* 滚动条 */
+    /* 滑块原来是 #E0E0E0 配白底、8px 宽，几乎看不见也不好抓；加宽加深一点，悬停更明显 */
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
     }
 
     ::-webkit-scrollbar-track {
@@ -1169,12 +1170,24 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: var(--color-border);
-      border-radius: 4px;
+      background: #C4C4C4;
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      min-height: 40px;
     }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--color-tertiary);
+    ::-webkit-scrollbar-thumb:hover,
+    ::-webkit-scrollbar-thumb:active {
+      background: #8A8A8A;
+      background-clip: padding-box;
+    }
+
+    /* Firefox 不认 ::-webkit-scrollbar，单独给个颜色（放在 @supports 里，避免新版 Chrome 因此忽略上面的样式） */
+    @supports not selector(::-webkit-scrollbar) {
+      * {
+        scrollbar-color: #C4C4C4 transparent;
+      }
     }
 
     /* 移动端响应式布局 */

@@ -1070,6 +1070,8 @@ const markdown = \`![图片](img://\${imageId})\`;
       html = this.applyInlineStyles(html);
 
       this.renderedContent = html;
+      // 预览 DOM 更新后重建滚动映射，并按当前主动方重新对齐（打字时预览不会跳回顶部/错位）
+      this.$nextTick(() => this.refreshScrollSync());
 
       // 异步检测内容是否含 GIF（决定是否显示「含 GIF」开关），不阻塞渲染
       this.detectHasGif();
@@ -1115,28 +1117,51 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     // ===== 左右联动：滚动同步 + 点击跳转 =====
+    // 思路：
+    // 1. 用「锚点对」建一张分段线性映射表：每个带 data-source-line 的预览块，
+    //    配上它对应源码行在 textarea 里的真实像素位置（用隐藏镜像 div 量，考虑自动换行），
+    //    再加首尾两个端点 (0,0) 和 (编辑器最大滚动, 预览最大滚动)。
+    //    两个方向用同一张表正反插值，互为反函数——不会再出现「A 带 B、B 又把 A 拽回去」的来回拉扯。
+    // 2. 谁在被用户操作（滚轮/按下滚动条/触摸/键盘）谁就是「主动方」，只有主动方的 scroll 事件
+    //    才会去同步另一侧；程序设置另一侧 scrollTop 触发的 scroll 事件一律忽略，不靠定时器解锁。
+    // 3. 预览重新渲染、图片加载、窗口尺寸变化后，映射表失效重建，并按主动方重新对齐一次。
     initScrollSync() {
       const ta = this.$refs.editorTextarea;
       const pv = this.$refs.previewScroll;
       if (!ta || !pv) return;
 
-      this._syncLock = false;
-      // scroll 同步：加锁防止两侧互相触发死循环
-      ta.addEventListener('scroll', () => {
-        if (this._syncLock) return;
-        this._syncLock = true;
-        this.syncPreviewToEditor();
-        requestAnimationFrame(() => { this._syncLock = false; });
-      });
-      pv.addEventListener('scroll', () => {
-        if (this._syncLock) return;
-        this._syncLock = true;
-        this.syncEditorToPreview();
-        requestAnimationFrame(() => { this._syncLock = false; });
+      this._scrollMap = null;
+      this._scrollDriver = 'editor';
+
+      const markDriver = (side) => () => { this._scrollDriver = side; };
+      ['wheel', 'pointerdown', 'touchstart', 'keydown'].forEach((type) => {
+        ta.addEventListener(type, markDriver('editor'), { passive: true, capture: true });
+        pv.addEventListener(type, markDriver('preview'), { passive: true, capture: true });
       });
 
-      // 点击/移动光标 → 预览跳转
-      ta.addEventListener('click', () => this.jumpPreviewToCaret());
+      ta.addEventListener('scroll', () => {
+        if (this._scrollDriver === 'editor') this.syncScrollFrom('editor');
+      }, { passive: true });
+      pv.addEventListener('scroll', () => {
+        if (this._scrollDriver === 'preview') this.syncScrollFrom('preview');
+      }, { passive: true });
+
+      // 预览里的图片加载完会撑高内容，映射表要重建
+      pv.addEventListener('load', (e) => {
+        if (e.target && e.target.tagName === 'IMG') this.refreshScrollSync();
+      }, true);
+
+      if (typeof ResizeObserver !== 'undefined') {
+        this._scrollResizeObserver = new ResizeObserver(() => this.refreshScrollSync());
+        this._scrollResizeObserver.observe(ta);
+        this._scrollResizeObserver.observe(pv);
+      }
+
+      // 点击/移动光标 → 预览跳转（只在光标真的变了时；点在 textarea 滚动条上不会改光标，不触发）
+      ta.addEventListener('pointerdown', () => { this._caretBeforeClick = ta.selectionStart; });
+      ta.addEventListener('click', () => {
+        if (ta.selectionStart !== this._caretBeforeClick) this.jumpPreviewToCaret();
+      });
       ta.addEventListener('keyup', (e) => {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
           this.jumpPreviewToCaret();
@@ -1144,6 +1169,113 @@ const markdown = \`![图片](img://\${imageId})\`;
       });
       // 点击预览 → 编辑器跳转
       pv.addEventListener('click', (e) => this.jumpEditorFromPreview(e));
+    },
+
+    // 内容/尺寸变化后：丢掉旧映射表，按主动方重新对齐另一侧（合并到下一帧，避免连续触发）
+    refreshScrollSync() {
+      this._scrollMap = null;
+      if (this._scrollRefreshRaf) return;
+      this._scrollRefreshRaf = requestAnimationFrame(() => {
+        this._scrollRefreshRaf = null;
+        this.syncScrollFrom(this._scrollDriver || 'editor');
+      });
+    },
+
+    syncScrollFrom(side) {
+      const ta = this.$refs.editorTextarea;
+      const pv = this.$refs.previewScroll;
+      if (!ta || !pv) return;
+      const map = this.getScrollMap();
+      if (!map) return;
+      if (side === 'editor') {
+        const target = this.interpolateScroll(map, 'e', 'p', ta.scrollTop);
+        if (Math.abs(pv.scrollTop - target) >= 1) pv.scrollTop = target;
+      } else {
+        const target = this.interpolateScroll(map, 'p', 'e', pv.scrollTop);
+        if (Math.abs(ta.scrollTop - target) >= 1) ta.scrollTop = target;
+      }
+    },
+
+    // 在有序锚点表上从 from 轴插值到 to 轴
+    interpolateScroll(map, from, to, value) {
+      if (value <= map[0][from]) return map[0][to];
+      for (let i = 1; i < map.length; i++) {
+        const a = map[i - 1];
+        const b = map[i];
+        if (value <= b[from]) {
+          const span = b[from] - a[from];
+          const t = span > 0 ? (value - a[from]) / span : 0;
+          return a[to] + t * (b[to] - a[to]);
+        }
+      }
+      return map[map.length - 1][to];
+    },
+
+    // 映射表：[{ e: 编辑器 scrollTop, p: 预览 scrollTop }]，两列都严格递增
+    getScrollMap() {
+      if (this._scrollMap) return this._scrollMap;
+      const ta = this.$refs.editorTextarea;
+      const pv = this.$refs.previewScroll;
+      if (!ta || !pv) return null;
+      const eMax = Math.max(0, ta.scrollHeight - ta.clientHeight);
+      const pMax = Math.max(0, pv.scrollHeight - pv.clientHeight);
+      const map = [{ e: 0, p: 0 }];
+      const els = this.sourceLineEls();
+      if (els.length && eMax > 0 && pMax > 0) {
+        const lineTops = this.editorLineTops();
+        for (const o of els) {
+          const e = lineTops[o.line];
+          if (e === undefined) continue;
+          const p = this.elTopInScroll(o.el, pv) - 12;
+          const last = map[map.length - 1];
+          if (e > last.e && p > last.p && e < eMax && p < pMax) map.push({ e, p });
+        }
+      }
+      map.push({ e: eMax, p: pMax });
+      this._scrollMap = map;
+      return map;
+    },
+
+    // 每个源码行在 textarea 内容里的顶部像素位置（用隐藏镜像 div 模拟自动换行）
+    editorLineTops() {
+      const ta = this.$refs.editorTextarea;
+      const cs = getComputedStyle(ta);
+      let mirror = this._editorMirror;
+      if (!mirror) {
+        mirror = document.createElement('div');
+        mirror.setAttribute('aria-hidden', 'true');
+        this._editorMirror = mirror;
+      }
+      const s = mirror.style;
+      s.position = 'absolute';
+      s.visibility = 'hidden';
+      s.pointerEvents = 'none';
+      s.top = '0';
+      s.left = '-99999px';
+      s.boxSizing = 'border-box';
+      s.width = ta.clientWidth + 'px';
+      s.border = '0';
+      s.whiteSpace = 'pre-wrap';
+      s.overflowWrap = 'break-word';
+      s.wordBreak = cs.wordBreak;
+      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing',
+        'wordSpacing', 'tabSize', 'textIndent', 'paddingTop', 'paddingRight', 'paddingBottom',
+        'paddingLeft'].forEach((p) => { s[p] = cs[p]; });
+
+      const frag = document.createDocumentFragment();
+      const lines = this.markdownInput.split('\n');
+      for (const line of lines) {
+        const div = document.createElement('div');
+        div.textContent = line || '\u200b';
+        frag.appendChild(div);
+      }
+      mirror.textContent = '';
+      mirror.appendChild(frag);
+      document.body.appendChild(mirror);
+      const tops = Array.from(mirror.children, (c) => c.offsetTop - parseFloat(cs.paddingTop || 0));
+      mirror.remove();
+      mirror.textContent = '';
+      return tops;
     },
 
     // 预览中所有带源码行号的元素，按行号排序
@@ -1156,55 +1288,9 @@ const markdown = \`![图片](img://\${imageId})\`;
         .sort((a, b) => a.line - b.line);
     },
 
-    totalSourceLines() {
-      return Math.max(1, (this.markdownInput.match(/\n/g) || []).length + 1);
-    },
-
     // 元素相对滚动容器的顶部偏移
     elTopInScroll(el, container) {
       return el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-    },
-
-    // 给定源码行号 → 预览容器目标 scrollTop（相邻锚点插值）
-    previewScrollForLine(line) {
-      const pv = this.$refs.previewScroll;
-      const els = this.sourceLineEls();
-      if (!els.length) return 0;
-      let lo = els[0];
-      let hi = null;
-      for (const o of els) {
-        if (o.line <= line) lo = o;
-        else { hi = o; break; }
-      }
-      const loTop = this.elTopInScroll(lo.el, pv);
-      if (!hi) return Math.max(0, loTop - 12);
-      const hiTop = this.elTopInScroll(hi.el, pv);
-      const frac = (line - lo.line) / Math.max(1, hi.line - lo.line);
-      return Math.max(0, loTop + frac * (hiTop - loTop) - 12);
-    },
-
-    syncPreviewToEditor() {
-      const ta = this.$refs.editorTextarea;
-      const pv = this.$refs.previewScroll;
-      const denom = ta.scrollHeight - ta.clientHeight;
-      const ratio = denom > 0 ? ta.scrollTop / denom : 0;
-      const topLine = ratio * this.totalSourceLines();
-      pv.scrollTop = this.previewScrollForLine(topLine);
-    },
-
-    syncEditorToPreview() {
-      const ta = this.$refs.editorTextarea;
-      const pv = this.$refs.previewScroll;
-      const els = this.sourceLineEls();
-      if (!els.length) return;
-      // 找到滚动到顶部的锚点元素
-      let top = els[0];
-      for (const o of els) {
-        if (this.elTopInScroll(o.el, pv) <= pv.scrollTop + 6) top = o;
-        else break;
-      }
-      const denom = ta.scrollHeight - ta.clientHeight;
-      ta.scrollTop = (top.line / this.totalSourceLines()) * denom;
     },
 
     caretSourceLine() {
@@ -1220,22 +1306,27 @@ const markdown = \`![图片](img://\${imageId})\`;
       return off;
     },
 
+    // 光标所在行对应的预览块：已经在视野里就只高亮，不在视野里才平滑滚过去
     jumpPreviewToCaret() {
       const pv = this.$refs.previewScroll;
       if (!pv) return;
       const line = this.caretSourceLine();
-      this._syncLock = true;
-      pv.scrollTo({ top: this.previewScrollForLine(line), behavior: 'smooth' });
-      clearTimeout(this._syncUnlock);
-      this._syncUnlock = setTimeout(() => { this._syncLock = false; }, 260);
-      // 高亮对应块
       const els = this.sourceLineEls();
       let match = els.length ? els[0] : null;
       for (const o of els) {
         if (o.line <= line) match = o;
         else break;
       }
-      if (match) this.flashSourceEl(match.el);
+      if (!match) return;
+      const r = match.el.getBoundingClientRect();
+      const pr = pv.getBoundingClientRect();
+      const visible = r.bottom > pr.top + 24 && r.top < pr.bottom - 24;
+      if (!visible) {
+        // 主动方仍是编辑器，预览平滑滚动产生的 scroll 事件会被忽略
+        this._scrollDriver = 'editor';
+        pv.scrollTo({ top: Math.max(0, this.elTopInScroll(match.el, pv) - 12), behavior: 'smooth' });
+      }
+      this.flashSourceEl(match.el);
     },
 
     jumpEditorFromPreview(e) {
@@ -1244,14 +1335,19 @@ const markdown = \`![图片](img://\${imageId})\`;
       const line = parseInt(node.getAttribute('data-source-line'), 10);
       if (isNaN(line)) return;
       const ta = this.$refs.editorTextarea;
+      const pv = this.$refs.previewScroll;
       const offset = this.lineStartOffset(line);
-      this._syncLock = true;
-      ta.focus();
+      this._scrollDriver = 'preview';
+      const keepTop = ta.scrollTop;
+      ta.focus({ preventScroll: true });
       ta.setSelectionRange(offset, offset);
-      const denom = ta.scrollHeight - ta.clientHeight;
-      ta.scrollTop = (line / this.totalSourceLines()) * denom;
-      clearTimeout(this._syncUnlock);
-      this._syncUnlock = setTimeout(() => { this._syncLock = false; }, 260);
+      ta.scrollTop = keepTop;
+      // 该行不在编辑器视野里才滚动：把它放到与预览中被点块相同的相对高度
+      const lineTop = this.editorLineTops()[line] || 0;
+      if (lineTop < ta.scrollTop || lineTop > ta.scrollTop + ta.clientHeight - 40) {
+        const offsetInView = node.getBoundingClientRect().top - pv.getBoundingClientRect().top;
+        ta.scrollTop = Math.max(0, lineTop - offsetInView);
+      }
       this.flashSourceEl(node);
     },
 
