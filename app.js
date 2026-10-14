@@ -784,8 +784,8 @@ const editorApp = createApp({
       return STYLES[this.currentStyle].styles;
     },
 
-    // 技术风格「青瓷 / 墨笺」的结构性装饰，全部用真实节点 + 行内样式（公众号不支持伪元素）。经典版式不动：
-    // 1. 青瓷：一级标题下加一道主色短线；墨笺：每个二级标题上方加一道短红线
+    // 技术风格新版式（青瓷 / 墨笺 / 晴空 / 柠檬）的结构性装饰，全部用真实节点 + 行内样式（公众号不支持伪元素）。经典版式不动：
+    // 1. 按 TECH_VARIANTS[*].deco：一级标题下短线 / 二级标题上方短线 / 三级标题前圆点
     // 2. 行内代码上样式（通用的样式循环会跳过 code）
     // 3. 把 highlight 生成的深色 Mac 窗口代码块重建为浅底代码块，右上角标语言
     decorateTech(doc) {
@@ -795,7 +795,9 @@ const editorApp = createApp({
       const c = variant.colors;
       const style = this.getActiveStyles();
 
-      if (this.techVariant === 'ink') {
+      const deco = variant.deco || {};
+
+      if (deco.h2TopBar) {
         doc.querySelectorAll('h2').forEach((h2) => {
           const bar = doc.createElement('section');
           bar.setAttribute('style', `width: 24px; height: 3px; background-color: ${c.main}; margin: 44px 0 12px;`);
@@ -803,7 +805,15 @@ const editorApp = createApp({
         });
       }
 
-      const h1 = this.techVariant === 'celadon' ? doc.querySelector('h1') : null;
+      if (deco.h3Dot) {
+        doc.querySelectorAll('h3').forEach((h3) => {
+          const dot = doc.createElement('span');
+          dot.setAttribute('style', `display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${c.main}; margin: 0 8px 2px 0; vertical-align: middle;`);
+          h3.insertBefore(dot, h3.firstChild);
+        });
+      }
+
+      const h1 = deco.h1Bar ? doc.querySelector('h1') : null;
       if (h1) {
         const bar = doc.createElement('section');
         bar.setAttribute('style', `width: 28px; height: 4px; border-radius: 2px; background-color: ${c.main}; margin: 0 0 22px;`);
@@ -2050,8 +2060,9 @@ const markdown = \`![图片](img://\${imageId})\`;
         const blockquotes = doc.querySelectorAll('blockquote');
         blockquotes.forEach(blockquote => {
           const currentStyle = blockquote.getAttribute('style') || '';
-          // 没有底色的引用（如技术风格的细竖线引用）保持原样，不额外加灰底
+          // 没有底色的引用（如细竖线引用）保持原样；技术风格新版式的引用底色是设计的一部分，也保持原样
           if (!/background/i.test(currentStyle)) return;
+          if (this.currentStyle === 'wechat-tech' && this.techVariant !== 'classic') return;
 
           // 移除现有的背景色和文字颜色
           let newStyle = currentStyle

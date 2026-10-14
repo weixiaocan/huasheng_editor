@@ -416,6 +416,38 @@ const INK = {
   codeText: '#333738'
 };
 
+// 晴空：天空蓝（不带紫）。二级标题 = 蓝底白字小标签；三级标题前一个蓝点（app.js 插入）
+const SKY = {
+  ink: '#1d2a36',
+  body: '#374250',
+  main: '#3b9ae1',
+  mainDark: '#1f74b5',
+  soft: '#eaf5fd',
+  marker: '#cde8fb',
+  line: '#e1edf6',
+  mute: '#7c8a96',
+  quoteBg: '#f4f9fd',
+  codeBg: '#fafafa',
+  codeText: '#2b3540'
+};
+
+// 柠檬：黄色只当荧光笔 / 便利贴用，文字保持深色
+const LEMON = {
+  ink: '#262626',
+  body: '#3b3b3b',
+  main: '#f5c518',
+  mainDark: '#946f00',
+  soft: '#fff7d1',
+  marker: '#ffe680',
+  note: '#ffe066',      // 二级标题便利贴底、链接下划线
+  line: '#efe9d2',
+  mute: '#6f6a5c',
+  quoteBg: '#fffbea',
+  thBg: '#fff3b8',
+  codeBg: '#fafafa',
+  codeText: '#2e2e2e'
+};
+
 function techBase(c) {
   return {
     container: `max-width: 740px; margin: 0 auto; padding: 10px 20px 20px 20px; font-family: ${TECH_FONT}; font-size: 16px; line-height: 1.8 !important; letter-spacing: 0.5px; color: ${c.body} !important; background-color: #fff !important; word-wrap: break-word;`,
@@ -466,10 +498,46 @@ function buildInkStyles() {
   });
 }
 
+// 晴空 / 柠檬共用青瓷的骨架（正文、表格、代码等），只覆盖标题、加粗、引用、链接
+function buildSkyStyles() {
+  const c = SKY;
+  return Object.assign(techBase(c), {
+    h1: `font-size: 23px; font-weight: 700; color: ${c.ink} !important; line-height: 1.4 !important; margin: 6px 0 4px; letter-spacing: 0.5px;`,
+    h2: `display: inline-block; font-size: 17px; font-weight: 700; color: #ffffff !important; line-height: 1.5 !important; margin: 32px 0 14px; padding: 5px 14px; background-color: ${c.main} !important; border-radius: 4px 14px 14px 4px;`,
+    h3: `font-size: 17px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 26px 0 10px;`,
+    strong: `font-weight: 700; color: ${c.mainDark} !important; background: linear-gradient(transparent 60%, ${c.marker} 60%); padding: 0 1px;`,
+    a: `color: ${c.mainDark} !important; text-decoration: none; border-bottom: 1px solid ${c.marker};`,
+    blockquote: `margin: 22px 0; padding: 12px 16px; background-color: ${c.quoteBg} !important; border-radius: 6px; color: ${c.mute} !important; font-size: 15px; line-height: 1.75 !important;`,
+    code: `font-family: ${TECH_MONO}; font-size: 13.5px; color: ${c.mainDark} !important; background-color: ${c.soft} !important; padding: 2px 5px; border-radius: 4px; letter-spacing: 0;`,
+    hr: `margin: 36px 0; border: none; height: 1px; background-color: ${c.line};`,
+    th: `text-align: left; padding: 9px 10px; color: ${c.ink} !important; background-color: ${c.soft} !important; font-weight: 700; border-bottom: 2px solid ${c.main};`,
+    td: `padding: 9px 10px; border-bottom: 1px solid ${c.line};`,
+  });
+}
+
+function buildLemonStyles() {
+  const c = LEMON;
+  return Object.assign(techBase(c), {
+    h1: `font-size: 23px; font-weight: 700; color: ${c.ink} !important; line-height: 1.4 !important; margin: 6px 0 4px; letter-spacing: 0.5px;`,
+    h2: `display: inline-block; font-size: 18px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 32px 0 14px; padding: 4px 12px; background-color: ${c.note} !important; border-radius: 3px;`,
+    h3: `font-size: 17px; font-weight: 700; color: ${c.ink} !important; line-height: 1.4 !important; margin: 26px 0 10px; padding-left: 10px; border-left: 4px solid ${c.main};`,
+    strong: `font-weight: 700; color: ${c.ink} !important; background: linear-gradient(transparent 55%, ${c.marker} 55%); padding: 0 1px;`,
+    a: `color: ${c.ink} !important; text-decoration: none; border-bottom: 2px solid ${c.note};`,
+    blockquote: `margin: 22px 0; padding: 12px 16px; background-color: ${c.quoteBg} !important; border-radius: 6px; color: ${c.mute} !important; font-size: 15px; line-height: 1.75 !important;`,
+    code: `font-family: ${TECH_MONO}; font-size: 13.5px; color: ${c.mainDark} !important; background-color: ${c.soft} !important; padding: 2px 5px; border-radius: 4px; letter-spacing: 0;`,
+    hr: `margin: 36px 0; border: none; height: 1px; background-color: ${c.line};`,
+    th: `text-align: left; padding: 9px 10px; color: ${c.ink} !important; background-color: ${c.thBg} !important; font-weight: 700; border-bottom: 2px solid ${c.main};`,
+    td: `padding: 9px 10px; border-bottom: 1px solid ${c.line};`,
+  });
+}
+
+// deco：app.js decorateTech() 要补的真实节点 —— h1Bar 一级标题下短线；h2TopBar 二级标题上方短线；h3Dot 三级标题前圆点
 const TECH_VARIANTS = {
   classic: { name: '经典', desc: '花叔原版', colors: null },
-  celadon: { name: '青瓷', desc: '灰绿 · 安静', colors: CELADON, build: buildCeladonStyles },
-  ink: { name: '墨笺', desc: '黑白 + 朱红', colors: INK, build: buildInkStyles }
+  celadon: { name: '青瓷', desc: '灰绿 · 安静', colors: CELADON, build: buildCeladonStyles, deco: { h1Bar: true } },
+  ink: { name: '墨笺', desc: '黑白 + 朱红', colors: INK, build: buildInkStyles, deco: { h2TopBar: true } },
+  sky: { name: '晴空', desc: '天空蓝 · 明快', colors: SKY, build: buildSkyStyles, deco: { h1Bar: true, h3Dot: true } },
+  lemon: { name: '柠檬', desc: '黄色划重点', colors: LEMON, build: buildLemonStyles, deco: { h1Bar: true } }
 };
 
 function getTechStyles(variantKey) {
