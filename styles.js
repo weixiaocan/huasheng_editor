@@ -381,88 +381,100 @@ const STYLES = {
   }
 };
 
-// ===== 技术风格（wechat-tech）变体：主色 + 二级标题样式 =====
-// 只作用于「技术风格」，其他主题不受影响。所有值最终都写成行内样式（公众号不认 CSS 变量/伪元素/计数器）。
-// classic 与原版技术风格逐字一致，作为默认值，老用户切过来看到的还是原样。
-const TECH_PALETTES = {
-  classic: {
-    name: '经典蓝', primary: '#0066cc', primaryDark: '#0052a3', h2Bar: '#00a67d', tint: '#f0f9ff',
-    quoteBar: '#2196f3', quoteBg: '#f5f9fc', h3Bar: '#ff9800', strongBg: '#fff3cd',
-    codeColor: '#d63031', codeBg: '#ffe6e6', quoteBorder: '#cfe3f5', numberColor: '#0066cc'
-  },
-  green: {
-    name: '墨绿', primary: '#2f6b55', primaryDark: '#24533f', h2Bar: '#2f6b55', tint: '#eef5f1',
-    quoteBar: '#6f9c89', quoteBg: '#f3f8f5', h3Bar: '#8fb3a2', strongBg: '#e2efe7',
-    codeColor: '#2f6b55', codeBg: '#eaf3ee', quoteBorder: '#cfe2d7', numberColor: '#9dbdae'
-  },
-  brick: {
-    name: '砖红', primary: '#a24a3c', primaryDark: '#83392e', h2Bar: '#a24a3c', tint: '#f9f0ed',
-    quoteBar: '#c58676', quoteBg: '#fbf5f3', h3Bar: '#d0a08f', strongBg: '#f5e2dc',
-    codeColor: '#a24a3c', codeBg: '#f7ebe7', quoteBorder: '#ecd5ce', numberColor: '#d9aa9d'
-  },
-  purple: {
-    name: '深紫', primary: '#5a4a8c', primaryDark: '#463a70', h2Bar: '#5a4a8c', tint: '#f2f0f8',
-    quoteBar: '#8a7cb5', quoteBg: '#f6f5fa', h3Bar: '#a79dc8', strongBg: '#e8e4f3',
-    codeColor: '#5a4a8c', codeBg: '#efedf7', quoteBorder: '#dad5ea', numberColor: '#b3a9d3'
-  },
-  amber: {
-    name: '琥珀', primary: '#946326', primaryDark: '#774f1e', h2Bar: '#946326', tint: '#faf4ea',
-    quoteBar: '#c19a63', quoteBg: '#fcf8f1', h3Bar: '#d1b384', strongBg: '#f5e8cf',
-    codeColor: '#8a5a20', codeBg: '#f7efe1', quoteBorder: '#ebd9ba', numberColor: '#d8bf96'
-  },
-  slate: {
-    name: '藏青', primary: '#2d4a6a', primaryDark: '#213a55', h2Bar: '#2d4a6a', tint: '#eef2f6',
-    quoteBar: '#6d839c', quoteBg: '#f4f6f9', h3Bar: '#93a4b8', strongBg: '#e3e9f0',
-    codeColor: '#2d4a6a', codeBg: '#ebf0f5', quoteBorder: '#d2dbe6', numberColor: '#a3b3c6'
-  }
+// ===== 技术风格（wechat-tech）的三套版式 =====
+// classic = 花叔原版技术风格（STYLES['wechat-tech'].styles，逐字保留）；
+// celadon（青瓷）/ ink（墨笺）是新增的两套，明亮清爽方向。
+// 所有值都是行内样式（公众号不认 CSS 变量/伪元素/计数器）；
+// 一级标题短线、二级标题上方短线、浅色代码块、行内代码由 app.js 的 decorateTech() 用真实节点补上。
+const TECH_FONT = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+const TECH_MONO = '"SF Mono", Menlo, Consolas, "Courier New", monospace';
+
+// 青瓷：明亮的玉绿。二级标题 = 向右淡出的浅绿底块；三级标题 = 绿竖线 + 绿字；加粗 = 荧光笔
+const CELADON = {
+  ink: '#1f2623',       // 标题
+  body: '#353a38',      // 正文
+  main: '#1fa37a',      // 竖线、短线、表头下边线
+  mainDark: '#13805f',  // 三级标题字、行内代码字、链接
+  soft: '#e2f6ed',      // 二级标题底、表头底、行内代码底
+  marker: '#bdeed9',    // 加粗荧光笔
+  line: '#dcefe6',      // 分隔线、表格行线、引用竖线
+  mute: '#7f8c87',      // 引用文字
+  codeBg: '#f3faf7',
+  codeText: '#28302d'
 };
 
-const TECH_H2_STYLES = {
-  bar: { name: '左竖条' },
-  number: { name: '编号式' },
-  underline: { name: '下划线' },
-  block: { name: '底色块' }
+// 墨笺：黑白为主 + 一点亮朱红。二级标题上方一道短红线；加粗 = 红字；表格只留上下两道线
+const INK = {
+  ink: '#1f2224',
+  body: '#3a3d3f',
+  main: '#e5483a',
+  soft: '#fdf2f0',
+  line: '#ece6e4',
+  rule: '#2a2d2f',
+  mute: '#8a8d8f',
+  codeBg: '#faf6f5',
+  codeText: '#2e3133'
 };
 
-function buildTechStyles(paletteKey, h2Key) {
-  const c = TECH_PALETTES[paletteKey] || TECH_PALETTES.classic;
-  const h2Font = 'font-size: 22px; font-weight: 700; line-height: 1.3 !important; ';
-  const h2Base = 'font-size: 22px; font-weight: 700; color: #1a1a1a !important; line-height: 1.3 !important; ';
-  const h2 = {
-    bar: h2Base + `margin: 32px 0 16px; padding-left: 16px; padding-top: 4px; padding-bottom: 4px; border-left: 5px solid ${c.h2Bar}; background: linear-gradient(to right, ${c.tint} 0%, transparent 100%);`,
-    // 编号数字由 app.js 作为真实文本插入（<span> 块），这里只给标题本体
-    number: h2Base + 'margin: 40px 0 18px; padding: 0;',
-    // 下划线由 app.js 插入的内层 <span> 画出 4px 主色粗线（至少 72px 宽），标题本体画一条浅灰全宽底线
-    underline: h2Base + `margin: 40px 0 20px; padding: 0; border-bottom: 1px solid #e6e6e6;`,
-    // 底色块：主色实底 + 白字，贴合文字宽度的标签块，6 套主色对白字都够深。
-    // inline-block 的外边距不与相邻段落折叠，所以上下 margin 比其他样式小，实际间距相当
-    block: h2Font + `display: inline-block; color: #ffffff !important; margin: 22px 0 4px; padding: 8px 18px; background-color: ${c.primary} !important; border-radius: 6px;`
-  }[h2Key] || null;
-
+function techBase(c) {
   return {
-    container: 'max-width: 740px; margin: 0 auto; padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.75 !important; color: #2c3e50 !important; background-color: #fff !important; word-wrap: break-word;',
-    h1: `font-size: 26px; font-weight: 700; color: #1a1a1a !important; line-height: 1.3 !important; margin: 36px 0 18px; padding: 0 0 12px; border-bottom: 3px solid ${c.primary};`,
-    h2: h2 || (h2Base + `margin: 32px 0 16px; padding-left: 16px; padding-top: 4px; padding-bottom: 4px; border-left: 5px solid ${c.h2Bar}; background: linear-gradient(to right, ${c.tint} 0%, transparent 100%);`),
-    h3: `font-size: 20px; font-weight: 600; color: #2c3e50 !important; line-height: 1.4 !important; margin: 28px 0 14px; padding-left: 12px; border-left: 3px solid ${c.h3Bar};`,
-    h4: 'font-size: 18px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 24px 0 12px;',
-    h5: 'font-size: 17px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 20px 0 10px;',
-    h6: 'font-size: 16px; font-weight: 600; color: #34495e !important; line-height: 1.4 !important; margin: 18px 0 9px;',
-    p: 'margin: 18px 0 !important; line-height: 1.8 !important; color: #3a3a3a !important;',
-    strong: `font-weight: 700; color: #1a1a1a !important; background-color: ${c.strongBg} !important; padding: 2px 4px; border-radius: 8px;`,
-    em: 'font-style: italic; color: #666 !important;',
-    a: `color: ${c.primary} !important; text-decoration: none; border-bottom: 1px solid ${c.primary};`,
-    ul: 'margin: 18px 0; padding-left: 28px;',
-    ol: 'margin: 18px 0; padding-left: 28px;',
-    li: 'margin: 10px 0; line-height: 1.8 !important; color: #3a3a3a !important;',
-    // 引用：不用左竖条（避免和二级标题「左竖条」撞车），改为浅底圆角 + 细边框；大引号由 app.js 作为真实文本插入
-    blockquote: `margin: 20px 0; padding: 14px 20px 6px; background-color: ${c.quoteBg} !important; border: 1px solid ${c.quoteBorder}; border-radius: 8px; color: #555 !important; line-height: 1.5 !important;`,
-    code: `font-family: "Fira Code", Consolas, Monaco, "Courier New", monospace; font-size: 14px; padding: 3px 6px; background-color: ${c.codeBg} !important; color: ${c.codeColor} !important; border-radius: 8px; font-weight: 500;`,
-    pre: 'margin: 24px 0; padding: 20px; background-color: #1e1e1e !important; border-radius: 8px; overflow-x: auto; line-height: 1.6 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
-    hr: `margin: 36px 0; border: none; height: 2px; background: linear-gradient(to right, transparent, ${c.primary}, transparent);`,
-    img: 'max-width: 100%; max-height: 600px !important; height: auto; display: block; margin: 24px auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
-    table: 'width: 100%; margin: 24px 0; border-collapse: collapse; font-size: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);',
-    th: `background-color: ${c.primary} !important; color: #fff !important; padding: 12px; text-align: left; border: 1px solid ${c.primaryDark}; font-weight: 600;`,
-    td: 'padding: 12px; border: 1px solid #e0e0e0; background-color: #fff !important;',
-    tr: 'border-bottom: 1px solid #e0e0e0;',
+    container: `max-width: 740px; margin: 0 auto; padding: 10px 20px 20px 20px; font-family: ${TECH_FONT}; font-size: 16px; line-height: 1.8 !important; letter-spacing: 0.5px; color: ${c.body} !important; background-color: #fff !important; word-wrap: break-word;`,
+    h4: `font-size: 16px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 22px 0 10px;`,
+    h5: `font-size: 16px; font-weight: 600; color: ${c.body} !important; line-height: 1.5 !important; margin: 20px 0 8px;`,
+    h6: `font-size: 15px; font-weight: 600; color: ${c.mute} !important; line-height: 1.5 !important; margin: 18px 0 8px;`,
+    p: `margin: 0 0 18px !important; line-height: 1.8 !important; color: ${c.body} !important;`,
+    em: `font-style: italic; color: ${c.body} !important;`,
+    ul: 'margin: 0 0 18px; padding-left: 22px;',
+    ol: 'margin: 0 0 18px; padding-left: 22px;',
+    li: `margin: 6px 0; line-height: 1.8 !important; color: ${c.body} !important;`,
+    blockquote: `margin: 22px 0; padding: 2px 0 2px 14px; border-left: 2px solid ${c.line}; color: ${c.mute} !important; font-size: 15px; line-height: 1.75 !important;`,
+    img: 'max-width: 100%; max-height: 600px !important; height: auto; display: block; margin: 24px auto; border-radius: 6px;',
+    table: 'width: 100%; margin: 22px 0; border-collapse: collapse; font-size: 14px;',
+    tr: '',
   };
+}
+
+function buildCeladonStyles() {
+  const c = CELADON;
+  return Object.assign(techBase(c), {
+    h1: `font-size: 23px; font-weight: 700; color: ${c.ink} !important; line-height: 1.4 !important; margin: 6px 0 4px; letter-spacing: 0.5px;`,
+    h2: `font-size: 18px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 36px 0 16px; padding: 9px 14px; background: linear-gradient(to right, ${c.soft} 0%, ${c.soft} 35%, #ffffff 100%); border-radius: 6px 0 0 6px;`,
+    h3: `font-size: 17px; font-weight: 700; color: ${c.mainDark} !important; line-height: 1.4 !important; margin: 28px 0 12px; padding-left: 10px; border-left: 3px solid ${c.main};`,
+    strong: `font-weight: 700; color: ${c.ink} !important; background: linear-gradient(transparent 58%, ${c.marker} 58%); padding: 0 1px;`,
+    a: `color: ${c.mainDark} !important; text-decoration: none; border-bottom: 1px solid ${c.marker};`,
+    code: `font-family: ${TECH_MONO}; font-size: 13.5px; color: ${c.mainDark} !important; background-color: ${c.soft} !important; padding: 2px 5px; border-radius: 4px; letter-spacing: 0;`,
+    hr: `margin: 36px 0; border: none; height: 1px; background-color: ${c.line};`,
+    th: `text-align: left; padding: 9px 10px; color: ${c.ink} !important; background-color: ${c.soft} !important; font-weight: 700; border-bottom: 2px solid ${c.main};`,
+    td: `padding: 9px 10px; border-bottom: 1px solid ${c.line};`,
+  });
+}
+
+function buildInkStyles() {
+  const c = INK;
+  return Object.assign(techBase(c), {
+    h1: `font-size: 24px; font-weight: 800; color: ${c.ink} !important; line-height: 1.4 !important; margin: 6px 0 24px; letter-spacing: 0.5px;`,
+    // 上方的短红线由 app.js 插入
+    h2: `font-size: 20px; font-weight: 800; color: ${c.ink} !important; line-height: 1.45 !important; margin: 0 0 16px;`,
+    h3: `font-size: 17px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 28px 0 10px;`,
+    strong: `font-weight: 700; color: ${c.main} !important;`,
+    a: `color: ${c.main} !important; text-decoration: none;`,
+    code: `font-family: ${TECH_MONO}; font-size: 13.5px; color: ${c.main} !important; background-color: ${c.soft} !important; padding: 2px 5px; border-radius: 3px; letter-spacing: 0;`,
+    hr: `margin: 36px auto; border: none; height: 1px; width: 40%; background-color: ${c.line};`,
+    table: `width: 100%; margin: 22px 0; border-collapse: collapse; font-size: 14px; border-top: 2px solid ${c.rule}; border-bottom: 2px solid ${c.rule};`,
+    th: `text-align: left; padding: 8px; color: ${c.ink} !important; font-weight: 700; border-bottom: 1px solid ${c.rule};`,
+    td: 'padding: 7px 8px;',
+  });
+}
+
+const TECH_VARIANTS = {
+  classic: { name: '经典', desc: '花叔原版', colors: null },
+  celadon: { name: '青瓷', desc: '玉绿 · 清爽', colors: CELADON, build: buildCeladonStyles },
+  ink: { name: '墨笺', desc: '黑白 + 朱红', colors: INK, build: buildInkStyles }
+};
+
+function getTechStyles(variantKey) {
+  const v = TECH_VARIANTS[variantKey];
+  if (!v || !v.build) return STYLES['wechat-tech'].styles;
+  if (!v._cache) v._cache = v.build();
+  return v._cache;
 }

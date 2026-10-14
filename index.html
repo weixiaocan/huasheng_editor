@@ -409,57 +409,29 @@
       justify-content: space-between;
     }
 
-    /* 技术风格变体选择条 */
+    /* 技术风格版式切换条 */
     .theme-variant-bar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px 20px;
+      gap: 6px;
       padding: 8px var(--space-lg);
       border-bottom: 1px solid var(--color-border);
       background: var(--color-surface);
       font-size: 12px;
     }
 
-    .variant-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
     .variant-label {
       color: var(--color-tertiary);
       font-weight: 500;
-      margin-right: 2px;
+      margin-right: 4px;
       white-space: nowrap;
-    }
-
-    .variant-current {
-      color: var(--color-secondary);
-      margin-left: 2px;
-      white-space: nowrap;
-    }
-
-    .variant-swatch {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      border: 2px solid var(--color-surface);
-      box-shadow: 0 0 0 1px var(--color-border);
-      cursor: pointer;
-      padding: 0;
-      transition: box-shadow 120ms;
-    }
-
-    .variant-swatch:hover {
-      box-shadow: 0 0 0 1px var(--color-tertiary);
-    }
-
-    .variant-swatch.active {
-      box-shadow: 0 0 0 2px var(--color-primary);
     }
 
     .variant-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 3px 10px;
       border: 1px solid var(--color-light-border);
       border-radius: 6px;
@@ -468,18 +440,34 @@
       font-size: 12px;
       cursor: pointer;
       white-space: nowrap;
-      transition: all 120ms;
+      transition: border-color 120ms, background 120ms;
     }
 
     .variant-chip:hover {
       border-color: var(--color-accent);
-      background: var(--color-bg);
+    }
+
+    .variant-chip:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 1px;
     }
 
     .variant-chip.active {
       border-color: var(--color-accent);
-      background: var(--color-accent);
-      color: var(--color-surface);
+      background: var(--color-bg);
+      font-weight: 600;
+    }
+
+    .variant-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #0066cc;
+    }
+
+    .variant-desc {
+      color: var(--color-tertiary);
+      font-weight: 400;
     }
 
     .preview-title {
@@ -1949,32 +1937,21 @@
           </div>
         </div>
 
-        <!-- 技术风格专属：主色 + 二级标题样式（只在选中技术风格时出现） -->
+        <!-- 技术风格专属：版式切换（经典 = 花叔原版） -->
         <div v-if="currentStyle === 'wechat-tech'" class="theme-variant-bar">
-          <div class="variant-group">
-            <span class="variant-label">主色</span>
-            <button
-              v-for="(pal, key) in TECH_PALETTES"
-              :key="key"
-              class="variant-swatch"
-              :class="{ active: techPalette === key }"
-              :style="{ background: pal.primary }"
-              :title="pal.name"
-              :aria-label="'主色：' + pal.name"
-              @click="techPalette = key"
-            ></button>
-            <span class="variant-current">{{ TECH_PALETTES[techPalette].name }}</span>
-          </div>
-          <div class="variant-group">
-            <span class="variant-label">二级标题</span>
-            <button
-              v-for="(h2s, key) in TECH_H2_STYLES"
-              :key="key"
-              class="variant-chip"
-              :class="{ active: techH2Style === key }"
-              @click="techH2Style = key"
-            >{{ h2s.name }}</button>
-          </div>
+          <span class="variant-label">版式</span>
+          <button
+            v-for="(v, key) in TECH_VARIANTS"
+            :key="key"
+            type="button"
+            class="variant-chip"
+            :class="{ active: techVariant === key }"
+            :aria-pressed="techVariant === key"
+            @click="techVariant = key"
+          >
+            <span class="variant-dot" :style="v.colors ? { background: v.colors.main } : null"></span>
+            {{ v.name }}<span class="variant-desc">{{ v.desc }}</span>
+          </button>
         </div>
 
         <!-- 公众号预览模式 -->
