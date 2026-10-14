@@ -383,37 +383,37 @@ const STYLES = {
 
 // ===== 技术风格（wechat-tech）的三套版式 =====
 // classic = 花叔原版技术风格（STYLES['wechat-tech'].styles，逐字保留）；
-// celadon（青瓷）/ ink（墨笺）是新增的两套，明亮清爽方向。
+// celadon（青瓷）/ ink（墨笺）是新增的两套。
 // 所有值都是行内样式（公众号不认 CSS 变量/伪元素/计数器）；
 // 一级标题短线、二级标题上方短线、浅色代码块、行内代码由 app.js 的 decorateTech() 用真实节点补上。
 const TECH_FONT = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 const TECH_MONO = '"SF Mono", Menlo, Consolas, "Courier New", monospace';
 
-// 青瓷：明亮的玉绿。二级标题 = 向右淡出的浅绿底块；三级标题 = 绿竖线 + 绿字；加粗 = 荧光笔
+// 青瓷：冷灰绿。二级标题 = 向右淡出的浅绿底块；三级标题 = 绿竖线 + 绿字；加粗 = 荧光笔
 const CELADON = {
-  ink: '#1f2623',       // 标题
-  body: '#353a38',      // 正文
-  main: '#1fa37a',      // 竖线、短线、表头下边线
-  mainDark: '#13805f',  // 三级标题字、行内代码字、链接
-  soft: '#e2f6ed',      // 二级标题底、表头底、行内代码底
-  marker: '#bdeed9',    // 加粗荧光笔
-  line: '#dcefe6',      // 分隔线、表格行线、引用竖线
-  mute: '#7f8c87',      // 引用文字
-  codeBg: '#f3faf7',
-  codeText: '#28302d'
+  ink: '#22302c',       // 标题
+  body: '#3d4845',      // 正文
+  main: '#3b8a76',      // 竖线、短线、表头下边线
+  mainDark: '#2c6b5b',  // 三级标题字、行内代码字、链接
+  soft: '#ebf4f0',      // 二级标题底、表头底、行内代码底
+  marker: '#cfeadf',    // 加粗荧光笔
+  line: '#dde8e4',      // 分隔线、表格行线、引用竖线
+  mute: '#7d8a86',      // 引用文字
+  codeBg: '#f5f8f7',
+  codeText: '#2f3b38'
 };
 
-// 墨笺：黑白为主 + 一点亮朱红。二级标题上方一道短红线；加粗 = 红字；表格只留上下两道线
+// 墨笺：黑白为主 + 一点朱红。二级标题上方一道短红线；加粗 = 红字；表格只留上下两道线
 const INK = {
-  ink: '#1f2224',
-  body: '#3a3d3f',
-  main: '#e5483a',
-  soft: '#fdf2f0',
-  line: '#ece6e4',
-  rule: '#2a2d2f',
-  mute: '#8a8d8f',
-  codeBg: '#faf6f5',
-  codeText: '#2e3133'
+  ink: '#1f2324',
+  body: '#45494b',
+  main: '#b0392c',
+  soft: '#f7f4f2',
+  line: '#e4e0dd',
+  rule: '#2a2e30',
+  mute: '#86898a',
+  codeBg: '#f7f4f2',
+  codeText: '#333738'
 };
 
 function techBase(c) {
@@ -468,7 +468,7 @@ function buildInkStyles() {
 
 const TECH_VARIANTS = {
   classic: { name: '经典', desc: '花叔原版', colors: null },
-  celadon: { name: '青瓷', desc: '玉绿 · 清爽', colors: CELADON, build: buildCeladonStyles },
+  celadon: { name: '青瓷', desc: '灰绿 · 安静', colors: CELADON, build: buildCeladonStyles },
   ink: { name: '墨笺', desc: '黑白 + 朱红', colors: INK, build: buildInkStyles }
 };
 
