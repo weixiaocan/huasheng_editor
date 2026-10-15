@@ -450,15 +450,16 @@ const LEMON = {
 
 function techBase(c) {
   return {
-    container: `max-width: 740px; margin: 0 auto; padding: 10px 20px 20px 20px; font-family: ${TECH_FONT}; font-size: 16px; line-height: 1.8 !important; letter-spacing: 0.5px; color: ${c.body} !important; background-color: #fff !important; word-wrap: break-word;`,
+    // 两侧只留 8px：公众号正文自己两侧已有留白，再留 20px 手机上一行只剩 18 字左右
+    container: `max-width: 740px; margin: 0 auto; padding: 10px 8px 20px 8px; font-family: ${TECH_FONT}; font-size: 16px; line-height: 1.8 !important; letter-spacing: 0.5px; color: ${c.body} !important; background-color: #fff !important; word-wrap: break-word;`,
     h4: `font-size: 16px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 22px 0 10px;`,
     h5: `font-size: 16px; font-weight: 600; color: ${c.body} !important; line-height: 1.5 !important; margin: 20px 0 8px;`,
     h6: `font-size: 15px; font-weight: 600; color: ${c.mute} !important; line-height: 1.5 !important; margin: 18px 0 8px;`,
-    p: `margin: 0 0 18px !important; line-height: 1.8 !important; color: ${c.body} !important;`,
+    p: `margin: 0 0 18px !important; line-height: 1.8 !important; color: ${c.body} !important; text-align: justify;`,
     em: `font-style: italic; color: ${c.body} !important;`,
     ul: 'margin: 0 0 18px; padding-left: 22px;',
     ol: 'margin: 0 0 18px; padding-left: 22px;',
-    li: `margin: 6px 0; line-height: 1.8 !important; color: ${c.body} !important;`,
+    li: `margin: 10px 0; line-height: 1.8 !important; color: ${c.body} !important; text-align: justify;`,
     blockquote: `margin: 22px 0; padding: 2px 0 2px 14px; border-left: 2px solid ${c.line}; color: ${c.mute} !important; font-size: 15px; line-height: 1.75 !important;`,
     img: 'max-width: 100%; max-height: 600px !important; height: auto; display: block; margin: 24px auto; border-radius: 6px;',
     table: 'width: 100%; margin: 22px 0; border-collapse: collapse; font-size: 14px;',

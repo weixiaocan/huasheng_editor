@@ -820,6 +820,20 @@ const editorApp = createApp({
         h1.parentNode.insertBefore(bar, h1.nextSibling);
       }
 
+      // 图片说明：![说明文字](...) 里的文字显示在图片下方。
+      // 粘贴/拖入的图片会自动带上文件名（image、截图、IMG_1234 之类），这种不当作说明
+      const autoName = /^(图片|image|img|pasted|screenshot|截图|截屏|屏幕截图|微信图片|dsc|photo)([\s_\-.]|\d|$)/i;
+      doc.querySelectorAll('img').forEach((img) => {
+        if (img.closest('.image-grid')) return;
+        const alt = (img.getAttribute('alt') || '').trim();
+        if (!alt || autoName.test(alt)) return;
+        const cap = doc.createElement('p');
+        cap.setAttribute('style', `margin: -12px 0 22px !important; font-size: 13px; line-height: 1.6 !important; color: ${c.mute || '#999'} !important; text-align: center !important; letter-spacing: 0.3px;`);
+        cap.textContent = alt;
+        const holder = img.parentElement && img.parentElement.tagName === 'P' && img.parentElement.children.length === 1 ? img.parentElement : img;
+        holder.parentNode.insertBefore(cap, holder.nextSibling);
+      });
+
       doc.querySelectorAll('code').forEach((code) => {
         if (code.closest('pre') || code.closest('h1, h2, h3, h4, h5, h6')) return;
         code.setAttribute('style', (code.getAttribute('style') || '') + '; ' + style.code);
@@ -1963,8 +1977,12 @@ const markdown = \`![图片](img://\${imageId})\`;
         // Section 容器包裹
         const styleConfig = STYLES[this.currentStyle];
         const containerBg = this.extractBackgroundColor(styleConfig.styles.container);
+        // 样式里常写成 "#fff !important"，原来直接和 '#fff' 比对不上，白底主题也会被多包一层带内边距的外框，
+        // 加上内层容器自己的内边距，两侧留白翻倍，手机上一行只剩 15 字左右。这里先去掉 !important 再比较。
+        const bgColor = (containerBg || '').replace(/!important/i, '').trim();
+        const isWhiteBg = ['#fff', '#ffffff', 'white', 'transparent'].includes(bgColor.toLowerCase());
 
-        if (containerBg && containerBg !== '#fff' && containerBg !== '#ffffff') {
+        if (bgColor && !isWhiteBg) {
           const section = doc.createElement('section');
           const containerStyle = styleConfig.styles.container;
           const paddingMatch = containerStyle.match(/padding:\s*([^;]+)/);
@@ -1973,7 +1991,7 @@ const markdown = \`![图片](img://\${imageId})\`;
           const maxWidth = maxWidthMatch ? maxWidthMatch[1].trim() : '100%';
 
           section.setAttribute('style',
-            `background-color: ${containerBg}; ` +
+            `background-color: ${bgColor}; ` +
             `padding: ${padding}; ` +
             `max-width: ${maxWidth}; ` +
             `margin: 0 auto; ` +
@@ -1983,6 +2001,12 @@ const markdown = \`![图片](img://\${imageId})\`;
 
           while (doc.body.firstChild) {
             section.appendChild(doc.body.firstChild);
+          }
+
+          // 内边距已经挪到外层 section 上，内层容器不再重复留白
+          const innerContainer = section.firstElementChild;
+          if (innerContainer) {
+            innerContainer.setAttribute('style', (innerContainer.getAttribute('style') || '').replace(/padding:\s*[^;]+;?/gi, ''));
           }
 
           const allElements = section.querySelectorAll('*');
