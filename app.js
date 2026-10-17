@@ -581,6 +581,9 @@ const editorApp = createApp({
       // 技术风格的三套版式：经典（花叔原版）/ 青瓷 / 墨笺
       TECH_VARIANTS: TECH_VARIANTS,
       techVariant: 'classic',
+      // 随笔的强调色：朱红 / 青绿
+      ESSAY_VARIANTS: ESSAY_VARIANTS,
+      essayVariant: 'red',
       turndownService: null,  // Turndown 服务实例
       isDraggingOver: false,  // 拖拽状态
       imageHostManager: new ImageHostManager(),  // 图床管理器（已废弃，保留兼容）
@@ -706,6 +709,16 @@ const editorApp = createApp({
   },
 
   computed: {
+    // 预览上方的版式 / 强调色切换条：技术风格、随笔各有一组
+    variantBar() {
+      if (this.currentStyle === 'wechat-tech') {
+        return { label: '版式', options: TECH_VARIANTS, value: this.techVariant, field: 'techVariant' };
+      }
+      if (this.currentStyle === 'wechat-essay') {
+        return { label: '强调色', options: ESSAY_VARIANTS, value: this.essayVariant, field: 'essayVariant' };
+      }
+      return null;
+    },
     currentFloatingAd() {
       if (!this.floatingAd || !this.floatingAd.ads || this.floatingAd.ads.length === 0) {
         return {
@@ -731,6 +744,10 @@ const editorApp = createApp({
     techVariant(val) {
       if (this.md) this.renderMarkdown();
       try { localStorage.setItem('techVariant', val); } catch (e) {}
+    },
+    essayVariant(val) {
+      if (this.md) this.renderMarkdown();
+      try { localStorage.setItem('essayVariant', val); } catch (e) {}
     },
     markdownInput(newVal, oldVal) {
       if (this.md) {
@@ -775,12 +792,15 @@ const editorApp = createApp({
       try {
         const v = localStorage.getItem('techVariant');
         if (v && TECH_VARIANTS[v]) this.techVariant = v;
+        const ev = localStorage.getItem('essayVariant');
+        if (ev && ESSAY_VARIANTS[ev]) this.essayVariant = ev;
       } catch (e) {}
     },
 
     // 当前主题的样式表；技术风格按所选版式取
     getActiveStyles() {
       if (this.currentStyle === 'wechat-tech') return getTechStyles(this.techVariant);
+      if (this.currentStyle === 'wechat-essay') return getEssayStyles(this.essayVariant);
       return STYLES[this.currentStyle].styles;
     },
 
@@ -820,19 +840,7 @@ const editorApp = createApp({
         h1.parentNode.insertBefore(bar, h1.nextSibling);
       }
 
-      // 图片说明：![说明文字](...) 里的文字显示在图片下方。
-      // 粘贴/拖入的图片会自动带上文件名（image、截图、IMG_1234 之类），这种不当作说明
-      const autoName = /^(图片|image|img|pasted|screenshot|截图|截屏|屏幕截图|微信图片|dsc|photo)([\s_\-.]|\d|$)/i;
-      doc.querySelectorAll('img').forEach((img) => {
-        if (img.closest('.image-grid')) return;
-        const alt = (img.getAttribute('alt') || '').trim();
-        if (!alt || autoName.test(alt)) return;
-        const cap = doc.createElement('p');
-        cap.setAttribute('style', `margin: -12px 0 22px !important; font-size: 13px; line-height: 1.6 !important; color: ${c.mute || '#999'} !important; text-align: center !important; letter-spacing: 0.3px;`);
-        cap.textContent = alt;
-        const holder = img.parentElement && img.parentElement.tagName === 'P' && img.parentElement.children.length === 1 ? img.parentElement : img;
-        holder.parentNode.insertBefore(cap, holder.nextSibling);
-      });
+      this.addImageCaptions(doc, c.mute);
 
       doc.querySelectorAll('code').forEach((code) => {
         if (code.closest('pre') || code.closest('h1, h2, h3, h4, h5, h6')) return;
@@ -863,6 +871,65 @@ const editorApp = createApp({
         box.appendChild(newPre);
         pre.parentNode.replaceChild(box, pre);
       });
+    },
+
+    // 图片说明：![说明文字](...) 里的文字显示在图片下方（技术风格新版式、随笔使用）
+    addImageCaptions(doc, muteColor) {
+      // 粘贴/拖入的图片会自动带上文件名（image、截图、IMG_1234 之类），这种不当作说明
+      const autoName = /^(图片|image|img|pasted|screenshot|截图|截屏|屏幕截图|微信图片|dsc|photo)([\s_\-.]|\d|$)/i;
+      doc.querySelectorAll('img').forEach((img) => {
+        if (img.closest('.image-grid')) return;
+        const alt = (img.getAttribute('alt') || '').trim();
+        if (!alt || autoName.test(alt)) return;
+        const cap = doc.createElement('p');
+        cap.setAttribute('style', `margin: -12px 0 22px !important; font-size: 13px; line-height: 1.6 !important; color: ${muteColor || '#999'} !important; text-align: center !important; letter-spacing: 0.3px;`);
+        cap.textContent = alt;
+        const holder = img.parentElement && img.parentElement.tagName === 'P' && img.parentElement.children.length === 1 ? img.parentElement : img;
+        holder.parentNode.insertBefore(cap, holder.nextSibling);
+      });
+
+    },
+
+    selectVariant(field, key) {
+      if (field === 'techVariant' || field === 'essayVariant') this[field] = key;
+    },
+
+    // 随笔版式的结构性装饰，全部用真实节点 + 行内样式（公众号不支持伪元素）
+    decorateEssay(doc) {
+      if (this.currentStyle !== 'wechat-essay') return;
+      const c = (ESSAY_VARIANTS[this.essayVariant] || ESSAY_VARIANTS.red).colors;
+      const style = this.getActiveStyles();
+
+      // ### 小标题：下划线只画在文字下面（贴字宽），不撑满整行
+      doc.querySelectorAll('h3').forEach((h3) => {
+        const span = doc.createElement('span');
+        span.setAttribute('style', `display: inline-block; padding-bottom: 3px; border-bottom: 1.5px solid ${c.ink};`);
+        while (h3.firstChild) span.appendChild(h3.firstChild);
+        h3.appendChild(span);
+      });
+
+      // --- → 居中的 ///
+      doc.querySelectorAll('hr').forEach((hr) => {
+        const sep = doc.createElement('section');
+        sep.setAttribute('style', `text-align: center; color: ${c.mute}; letter-spacing: 2px; line-height: 1.6; margin: 12px 0 42px;`);
+        sep.textContent = '///';
+        hr.parentNode.replaceChild(sep, hr);
+      });
+
+      // 单独一段只写 END → 居中的 - END -（直接写 "- END -" 会被 Markdown 当成列表）
+      doc.querySelectorAll('p').forEach((p) => {
+        if (p.textContent.trim().toUpperCase() !== 'END' || p.querySelector('img')) return;
+        p.setAttribute('style', `text-align: center !important; font-weight: 700; color: ${c.ink} !important; letter-spacing: 1px; line-height: 1.6 !important; margin: 48px 0 36px !important;`);
+        p.textContent = '- END -';
+      });
+
+      // 行内代码（通用样式循环会跳过 code）
+      doc.querySelectorAll('code').forEach((code) => {
+        if (code.closest('pre') || code.closest('h1, h2, h3, h4, h5, h6')) return;
+        code.setAttribute('style', (code.getAttribute('style') || '') + '; ' + style.code);
+      });
+
+      this.addImageCaptions(doc, c.mute);
     },
 
     loadIncludeGif() {
@@ -1594,6 +1661,7 @@ const markdown = \`![图片](img://\${imageId})\`;
       });
 
       this.decorateTech(doc);
+      this.decorateEssay(doc);
 
       // 修复首行顶部多余空隙：首个块级元素的上外边距与容器 padding 不折叠，
       // 会让正文像凭空多了一行空行（晚点等大 margin 标题尤其明显）。这里把首元素上边距归零。
@@ -2558,7 +2626,7 @@ const markdown = \`![图片](img://\${imageId})\`;
 
     isRecommended(styleKey) {
       // 推荐的样式
-      const recommended = ['nikkei', 'wechat-anthropic', 'wechat-ft', 'wechat-nyt', 'latepost-depth', 'wechat-tech'];
+      const recommended = ['nikkei', 'wechat-anthropic', 'wechat-ft', 'wechat-nyt', 'latepost-depth', 'wechat-tech', 'wechat-essay'];
       return recommended.includes(styleKey);
     },
 

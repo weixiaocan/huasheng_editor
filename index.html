@@ -1937,20 +1937,20 @@
           </div>
         </div>
 
-        <!-- 技术风格专属：版式切换（经典 = 花叔原版） -->
-        <div v-if="currentStyle === 'wechat-tech'" class="theme-variant-bar">
-          <span class="variant-label">版式</span>
+        <!-- 版式 / 强调色切换（技术风格：经典 = 花叔原版；随笔：朱红 / 青绿） -->
+        <div v-if="variantBar" class="theme-variant-bar">
+          <span class="variant-label">{{ variantBar.label }}</span>
           <button
-            v-for="(v, key) in TECH_VARIANTS"
+            v-for="(v, key) in variantBar.options"
             :key="key"
             type="button"
             class="variant-chip"
-            :class="{ active: techVariant === key }"
-            :aria-pressed="techVariant === key"
-            @click="techVariant = key"
+            :class="{ active: variantBar.value === key }"
+            :aria-pressed="variantBar.value === key"
+            @click="selectVariant(variantBar.field, key)"
           >
             <span class="variant-dot" :style="v.colors ? { background: v.colors.main } : null"></span>
-            {{ v.name }}<span class="variant-desc">{{ v.desc }}</span>
+            {{ v.name }}<span v-if="v.desc" class="variant-desc">{{ v.desc }}</span>
           </button>
         </div>
 

@@ -145,6 +145,12 @@ const STYLES = {
     }
   },
 
+  // 随笔：非技术文章用。样式由文件末尾的 getEssayStyles() 生成
+  'wechat-essay': {
+    name: '随笔',
+    styles: {}
+  },
+
   'wechat-deepread': {
     name: '深度阅读',
     styles: {
@@ -547,3 +553,55 @@ function getTechStyles(variantKey) {
   if (!v._cache) v._cache = v.build();
   return v._cache;
 }
+
+// ===== 随笔（wechat-essay）：写自己的非技术文章用 =====
+// 要点：段后空一整行（≈ 一个行高）、加粗只用黑色、整篇只在小节标题上用一个强调色、几乎不加装饰。
+// 公众号不能自定义字体，读者看到的是手机系统字体；舒服感来自字号、深灰字色、行距和字间距。
+// 结构性装饰由 app.js 的 decorateEssay() 用真实节点补上：
+//   ---           → 居中的 ///
+//   单独一段 END   → 居中的 - END -
+//   ### 小标题     → 贴字宽的下划线（文末"我是谁？"那种）
+const ESSAY_BASE = { ink: '#1f1f1f', body: '#3f3f3f', mute: '#8c8c8c', line: '#e6e6e6' };
+
+const ESSAY_VARIANTS = {
+  red: { name: '朱红', desc: '', colors: Object.assign({ main: '#b0392c' }, ESSAY_BASE) },
+  green: { name: '青绿', desc: '', colors: Object.assign({ main: '#2c6b5b' }, ESSAY_BASE) }
+};
+
+function buildEssayStyles(c) {
+  return {
+    container: `max-width: 740px; margin: 0 auto; padding: 10px 8px 20px 8px; font-family: ${TECH_FONT}; font-size: 16px; line-height: 1.9 !important; letter-spacing: 0.5px; color: ${c.body} !important; background-color: #fff !important; word-wrap: break-word;`,
+    h1: `font-size: 22px; font-weight: 700; color: ${c.ink} !important; line-height: 1.45 !important; margin: 4px 0 32px; letter-spacing: 0.5px;`,
+    // 小节标题：只换颜色 + 加粗，不加框、不加线
+    h2: `font-size: 17px; font-weight: 700; color: ${c.main} !important; line-height: 1.6 !important; margin: 44px 0 30px;`,
+    // 下划线画在 decorateEssay() 插入的内层 span 上，这里只管间距
+    h3: `font-size: 16px; font-weight: 700; color: ${c.ink} !important; line-height: 1.5 !important; margin: 40px 0 10px;`,
+    h4: `font-size: 16px; font-weight: 700; color: ${c.ink} !important; line-height: 1.6 !important; margin: 30px 0 12px;`,
+    h5: `font-size: 16px; font-weight: 600; color: ${c.body} !important; line-height: 1.6 !important; margin: 24px 0 10px;`,
+    h6: `font-size: 15px; font-weight: 600; color: ${c.mute} !important; line-height: 1.6 !important; margin: 20px 0 8px;`,
+    // 关键：段后空一整行
+    p: `margin: 0 0 30px !important; line-height: 1.9 !important; color: ${c.body} !important;`,
+    strong: `font-weight: 700; color: ${c.ink} !important;`,
+    em: `font-style: italic; color: ${c.body} !important;`,
+    a: `color: ${c.ink} !important; text-decoration: none; border-bottom: 1px solid ${c.mute};`,
+    ul: 'margin: 0 0 30px; padding-left: 22px;',
+    ol: 'margin: 0 0 30px; padding-left: 22px;',
+    li: `margin: 8px 0; line-height: 1.9 !important; color: ${c.body} !important;`,
+    blockquote: `margin: 0 0 30px; padding: 0 0 0 14px; border-left: 2px solid ${c.line}; color: ${c.mute} !important; line-height: 1.9 !important;`,
+    code: `font-family: ${TECH_MONO}; font-size: 14px; color: ${c.ink} !important; background-color: #f5f5f5 !important; padding: 2px 5px; border-radius: 3px; letter-spacing: 0;`,
+    hr: `margin: 12px 0 42px; border: none; height: 0;`,
+    img: 'max-width: 100%; max-height: 600px !important; height: auto; display: block; margin: 24px auto; border-radius: 4px;',
+    table: 'width: 100%; margin: 0 0 30px; border-collapse: collapse; font-size: 15px;',
+    th: `text-align: left; padding: 8px 10px; color: ${c.ink} !important; font-weight: 700; border-bottom: 1px solid ${c.ink};`,
+    td: `padding: 8px 10px; border-bottom: 1px solid ${c.line};`,
+    tr: '',
+  };
+}
+
+function getEssayStyles(variantKey) {
+  const v = ESSAY_VARIANTS[variantKey] || ESSAY_VARIANTS.red;
+  if (!v._cache) v._cache = buildEssayStyles(v.colors);
+  return v._cache;
+}
+
+STYLES['wechat-essay'].styles = getEssayStyles('red');
