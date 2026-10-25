@@ -28,35 +28,42 @@
     padTop: 112,
     padBottom: 104,
     gap: 60,              // 段与段之间 = 一个行高
-    bg: '#f9faf5',
-    ink: '#1f1f1f',
-    body: '#2b2b2b',
-    mute: '#8a8a85',
-    line: '#dedfd8',
-    marker: '#ffe680',    // 加粗的荧光笔底色
     maxCards: 18          // 小红书一篇最多 18 张图
   };
 
+  // 纸张：底色、文字色、加粗的荧光笔色、纸面颗粒（0 = 没有颗粒）。颜色会合并进 CARD
+  const PAPERS = {
+    plain: { name: '米白', bg: '#f9faf5', ink: '#1f1f1f', body: '#2b2b2b', mute: '#8a8a85', line: '#dedfd8', marker: '#ffe680', codeBg: '#eeefe8', preBg: '#f0f1ea', accent: '#1f1f1f', grain: 0 },
+    // 接头像的灰绿底色往浅里走；加粗用纸飞机同色系的浅杏色
+    sage: { name: '灰绿纸', bg: '#eef1e8', ink: '#22251e', body: '#30332b', mute: '#858a7d', line: '#d3d9c9', marker: '#f7d2a6', codeBg: '#e3e8db', preBg: '#e5e9dd', accent: '#9a5528', grain: 0.07 },
+    // 接纸飞机和书的暖色，像旧书页
+    cream: { name: '米色纸', bg: '#f7f1e4', ink: '#2a241c', body: '#362f26', mute: '#9a8f7d', line: '#e3d8c2', marker: '#f6cd94', codeBg: '#efe6d4', preBg: '#f0e8d7', accent: '#9a5528', grain: 0.07 }
+  };
+  let paperKey = 'plain';
+  Object.assign(CARD, PAPERS[paperKey]);
+
+  let S = null;
+  function buildStyles() {
   const TEXT = `font-size: 38px; line-height: 60px; font-weight: 500; letter-spacing: 0.5px; color: ${CARD.body};`;
-  const S = {
+  S = {
     p: `margin: 0; ${TEXT} text-align: justify;`,
     h1: `margin: 0; font-size: 48px; line-height: 72px; font-weight: 900; color: ${CARD.ink}; letter-spacing: 1px;`,
-    h2: `margin: 0; font-size: 44px; line-height: 64px; font-weight: 900; color: ${CARD.ink}; letter-spacing: 0.5px;`,
+    h2: `margin: 0; font-size: 46px; line-height: 66px; font-weight: 900; color: ${CARD.accent}; letter-spacing: 0.5px;`,
     h3: `margin: 0; font-size: 40px; line-height: 60px; font-weight: 900; color: ${CARD.ink}; letter-spacing: 0.5px;`,
     h4: `margin: 0; font-size: 38px; line-height: 60px; font-weight: 900; color: ${CARD.body}; letter-spacing: 0.5px;`,
     // 荧光笔只铺在文字下半截；用渐变而不是 background-color，跨行时每一行都画得对
     strong: `font-weight: 900; color: ${CARD.ink}; background: linear-gradient(transparent 58%, ${CARD.marker} 58%);`,
-    em: 'font-style: italic; color: #5a5a55;',
+    em: `font-style: italic; color: ${CARD.mute};`,
     del: `text-decoration: line-through; color: ${CARD.mute};`,
-    code: `font-family: ${MONO}; font-size: 0.82em; background: #eeefe8; padding: 2px 8px; border-radius: 6px; letter-spacing: 0;`,
-    link: `color: ${CARD.ink}; border-bottom: 2px solid #c9c9c0;`,
+    code: `font-family: ${MONO}; font-size: 0.82em; background: ${CARD.codeBg}; padding: 2px 8px; border-radius: 6px; letter-spacing: 0;`,
+    link: `color: ${CARD.ink}; border-bottom: 2px solid ${CARD.line};`,
     li: `display: flex; margin: 0; ${TEXT}`,
     liFollow: 'margin-top: -32px;',          // 同一列表的相邻条目不空整行
     liMark: `flex: 0 0 44px; height: 60px; display: flex; align-items: center; color: ${CARD.body};`,
     liDot: `display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${CARD.body};`,
     liCircle: `display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 2px solid ${CARD.body};`,
-    quote: `margin: 0; padding-left: 28px; border-left: 4px solid ${CARD.line}; font-size: 36px; line-height: 60px; font-weight: 500; letter-spacing: 0.5px; color: #66665f; text-align: justify;`,
-    pre: `margin: 0; padding: 28px 32px; background: #f0f1ea; border-radius: 12px; font-family: ${MONO}; font-size: 26px; line-height: 42px; color: #333; white-space: pre-wrap; word-break: break-all; letter-spacing: 0;`,
+    quote: `margin: 0; padding-left: 28px; border-left: 4px solid ${CARD.line}; font-size: 36px; line-height: 60px; font-weight: 500; letter-spacing: 0.5px; color: ${CARD.mute}; text-align: justify;`,
+    pre: `margin: 0; padding: 28px 32px; background: ${CARD.preBg}; border-radius: 12px; font-family: ${MONO}; font-size: 26px; line-height: 42px; color: ${CARD.body}; white-space: pre-wrap; word-break: break-all; letter-spacing: 0;`,
     table: `width: 100%; border-collapse: collapse; font-size: 30px; line-height: 46px; font-weight: 500; color: ${CARD.body}; border-top: 3px solid ${CARD.ink}; border-bottom: 3px solid ${CARD.ink};`,
     th: `text-align: left; padding: 14px 12px; font-weight: 900; color: ${CARD.ink}; border-bottom: 2px solid ${CARD.ink};`,
     td: `text-align: left; padding: 14px 12px; border-bottom: 1px solid ${CARD.line}; vertical-align: top;`,
@@ -64,8 +71,41 @@
     img: 'display: block; max-width: 100%; max-height: 1080px; width: auto; height: auto; border-radius: 12px;',
     caption: `margin: 0; font-size: 28px; line-height: 42px; font-weight: 500; color: ${CARD.mute}; text-align: center; letter-spacing: 0.5px;`,
     sep: `margin: 0; text-align: center; font-size: 34px; line-height: 60px; letter-spacing: 4px; color: ${CARD.mute};`,
-    end: `margin: 0; text-align: center; font-size: 36px; line-height: 60px; font-weight: 900; letter-spacing: 2px; color: ${CARD.ink};`
+    end: `margin: 0; text-align: center; font-size: 36px; line-height: 60px; font-weight: 900; letter-spacing: 2px; color: ${CARD.ink};`,
+    // 整段都是加粗的句子：不铺荧光笔，只用粗体（整段铺满底色太重）
+    strongWhole: `font-weight: 900; color: ${CARD.ink};`
   };
+  }
+  buildStyles();
+
+  function setPaper(key) {
+    if (!PAPERS[key]) return;
+    paperKey = key;
+    Object.assign(CARD, PAPERS[key]);
+    buildStyles();
+  }
+
+  // 纸面颗粒：运行时用 canvas 画一小块噪点平铺，不占仓库体积
+  const grainCache = {};
+  function grainURL(alpha) {
+    if (!alpha) return '';
+    if (grainCache[alpha]) return grainCache[alpha];
+    const size = 180;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    let seed = 7;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = rand() < 0.5 ? 0 : 255;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = Math.round(rand() * alpha * 255);
+    }
+    ctx.putImageData(img, 0, 0);
+    grainCache[alpha] = c.toDataURL('image/png');
+    return grainCache[alpha];
+  }
 
   const PAGE_BREAK = /^\s*分页\s*$/;
   // 粘贴/拖入的图片会自动带上文件名，这种不当作图片说明
@@ -171,10 +211,18 @@
         imgs.forEach((n) => n.remove());
         const text = node.textContent.trim();
         if (text.toUpperCase() === 'END' && !imgs.length) { push('end', make('p', S.end, '- END -')); return; }
-        if (text) push('p', styleInline(make('p', S.p, node.innerHTML)), { splittable: true });
+        if (text) {
+          const p = styleInline(make('p', S.p, node.innerHTML));
+          const strongs = Array.from(p.querySelectorAll('strong, b'));
+          const boldText = strongs.map((n) => n.textContent).join('').replace(/\s/g, '');
+          if (strongs.length && boldText === text.replace(/\s/g, '')) strongs.forEach((n) => n.setAttribute('style', S.strongWhole));
+          push('p', p, { splittable: true });
+        }
         imgs.forEach(imageBlock);
-      } else if (/^h[1-6]$/.test(tag)) {
-        const style = tag === 'h1' ? S.h1 : tag === 'h2' ? S.h2 : tag === 'h3' ? S.h3 : S.h4;
+      } else if (tag === 'h1') {
+        // 一级标题是文章标题，小红书的标题单独填，卡片里不放
+      } else if (/^h[2-6]$/.test(tag)) {
+        const style = tag === 'h2' ? S.h2 : tag === 'h3' ? S.h3 : S.h4;
         push('h', styleInline(make('p', style, node.innerHTML)));
       } else if (tag === 'ul' || tag === 'ol') {
         listBlocks(node, 0);
@@ -240,7 +288,9 @@
     card.className = 'xhs-card';
     card.setAttribute('style',
       `position: relative; box-sizing: border-box; width: ${CARD.width}px; height: ${CARD.height}px; overflow: hidden; ` +
-      `padding: ${CARD.padTop}px ${CARD.padX}px ${CARD.padBottom}px; background: ${CARD.bg}; font-family: ${SERIF}; ` +
+      `padding: ${CARD.padTop}px ${CARD.padX}px ${CARD.padBottom}px; background-color: ${CARD.bg}; ` +
+      (CARD.grain ? `background-image: url(${grainURL(CARD.grain)}); background-size: 180px 180px; ` : '') +
+      `font-family: ${SERIF}; ` +
       'display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;');
     if (header) {
       const h = document.createElement('div');
@@ -253,7 +303,7 @@
       }
       const meta = document.createElement('div');
       meta.innerHTML =
-        `<div style="font-size: 40px; line-height: 52px; font-weight: 900; color: ${CARD.ink};">${escapeHtml(header.name || '')}</div>` +
+        `<div style="font-size: 34px; line-height: 48px; font-weight: 500; color: ${CARD.ink}; letter-spacing: 1px;">${escapeHtml(header.name || '')}</div>` +
         (header.date ? `<div style="font-size: 30px; line-height: 44px; color: ${CARD.mute}; font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;">${escapeHtml(header.date)}</div>` : '');
       h.appendChild(meta);
       card.appendChild(h);
@@ -474,5 +524,5 @@
     });
   }
 
-  global.XhsCards = { CARD, paginate, loadFontFor, exportCard };
+  global.XhsCards = { CARD, PAPERS, setPaper, getPaper: () => paperKey, paginate, loadFontFor, exportCard };
 })(window);

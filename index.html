@@ -522,6 +522,7 @@
     }
 
     .xhs-seg button + button { border-left: 1px solid var(--color-light-border, #ddd); }
+    .xhs-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18); vertical-align: -1px; }
     .xhs-seg button.active { background: var(--color-bg, #f5f5f5); color: var(--color-primary, #111); font-weight: 600; }
     .xhs-seg button:focus-visible, .xhs-close:focus-visible, .xhs-dl:focus-visible { outline: 2px solid var(--color-accent, #0066cc); outline-offset: 1px; }
 
@@ -2224,6 +2225,11 @@
           <div class="xhs-seg" role="group" aria-label="分页方式">
             <button type="button" :class="{ active: xhs.mode === 'whole' }" :aria-pressed="xhs.mode === 'whole'" @click="setXhsMode('whole')" title="放不下的段落整段挪到下一张">整段不拆</button>
             <button type="button" :class="{ active: xhs.mode === 'fill' }" :aria-pressed="xhs.mode === 'fill'" @click="setXhsMode('fill')" title="每张尽量填满，段落可以跨页">铺满</button>
+          </div>
+          <div class="xhs-seg" role="group" aria-label="纸张">
+            <button v-for="p in xhsPapers" :key="p.key" type="button" :class="{ active: xhs.paper === p.key }" :aria-pressed="xhs.paper === p.key" @click="setXhsPaper(p.key)">
+              <span class="xhs-swatch" :style="{ background: p.bg }"></span>{{ p.name }}
+            </button>
           </div>
           <span class="xhs-spacer"></span>
           <button type="button" class="copy-btn" :disabled="xhs.busy || !xhs.count" @click="downloadAllXhsCards">{{ xhs.busyText || '全部下载' }}</button>

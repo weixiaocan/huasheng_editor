@@ -585,7 +585,13 @@ const editorApp = createApp({
       ESSAY_VARIANTS: ESSAY_VARIANTS,
       essayVariant: 'red',
       // 小红书图文卡片
-      xhs: { open: false, mode: 'whole', count: 0, busy: false, busyText: '', notes: [] },
+      xhs: { open: false, mode: 'whole', paper: 'sage', count: 0, busy: false, busyText: '', notes: [] },
+      // 纸张选项（和 xhs-cards.js 里的 PAPERS 对应；面板打开前引擎还没加载，所以这里先写一份显示用的）
+      xhsPapers: [
+        { key: 'sage', name: '灰绿纸', bg: '#eef1e8' },
+        { key: 'cream', name: '米色纸', bg: '#f7f1e4' },
+        { key: 'plain', name: '米白', bg: '#f9faf5' }
+      ],
       turndownService: null,  // Turndown 服务实例
       isDraggingOver: false,  // 拖拽状态
       imageHostManager: new ImageHostManager(),  // 图床管理器（已废弃，保留兼容）
@@ -911,7 +917,7 @@ const editorApp = createApp({
     async ensureXhsLibs() {
       await this.loadScriptOnce('vendor/html-to-image.min.js');
       await this.loadScriptOnce('vendor/jszip.min.js');
-      await this.loadScriptOnce('xhs-cards.js?v=3');
+      await this.loadScriptOnce('xhs-cards.js?v=7');
     },
 
     async openXhsPanel() {
@@ -919,6 +925,8 @@ const editorApp = createApp({
       try {
         const m = localStorage.getItem('xhsMode');
         if (m === 'whole' || m === 'fill') this.xhs.mode = m;
+        const p = localStorage.getItem('xhsPaper');
+        if (this.xhsPapers.some((x) => x.key === p)) this.xhs.paper = p;
       } catch (e) {}
       this.xhs.open = true;
       if (!this._xhsKey) {
@@ -943,6 +951,13 @@ const editorApp = createApp({
       this.renderXhsCards();
     },
 
+    setXhsPaper(key) {
+      if (this.xhs.paper === key || this.xhs.busy) return;
+      this.xhs.paper = key;
+      try { localStorage.setItem('xhsPaper', key); } catch (e) {}
+      this.renderXhsCards();
+    },
+
     async renderXhsCards() {
       const grid = this.$refs.xhsGrid;
       const measure = this.$refs.xhsMeasure;
@@ -958,6 +973,7 @@ const editorApp = createApp({
         html = await this.processImageProtocol(html);   // img:// → 本地图片
         const text = this.markdownInput;
         const fontOk = await XhsCards.loadFontFor(text);
+        XhsCards.setPaper(this.xhs.paper);
         const now = new Date();
         const date = String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0');
         const { cards, notes } = await XhsCards.paginate(html, {
