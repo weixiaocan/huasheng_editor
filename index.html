@@ -470,6 +470,146 @@
       font-weight: 400;
     }
 
+    /* 小红书卡片面板 */
+    .xhs-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(20, 20, 18, 0.45);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .xhs-panel {
+      position: relative;
+      width: min(1200px, 100%);
+      background: var(--color-surface, #fff);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .xhs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--color-border, #e5e5e5);
+    }
+
+    .xhs-title { font-size: 15px; }
+    .xhs-count { font-size: 13px; color: var(--color-tertiary, #888); font-variant-numeric: tabular-nums; }
+    .xhs-spacer { flex: 1; }
+
+    .xhs-seg {
+      display: inline-flex;
+      border: 1px solid var(--color-light-border, #ddd);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .xhs-seg button {
+      padding: 5px 12px;
+      font-size: 13px;
+      border: 0;
+      background: transparent;
+      color: var(--color-secondary, #555);
+      cursor: pointer;
+    }
+
+    .xhs-seg button + button { border-left: 1px solid var(--color-light-border, #ddd); }
+    .xhs-seg button.active { background: var(--color-bg, #f5f5f5); color: var(--color-primary, #111); font-weight: 600; }
+    .xhs-seg button:focus-visible, .xhs-close:focus-visible, .xhs-dl:focus-visible { outline: 2px solid var(--color-accent, #0066cc); outline-offset: 1px; }
+
+    .xhs-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--color-secondary, #555);
+      cursor: pointer;
+    }
+
+    .xhs-close:hover { background: var(--color-bg, #f5f5f5); }
+
+    .xhs-notes {
+      padding: 10px 18px;
+      background: #fffaf0;
+      border-bottom: 1px solid #f1e6cc;
+      font-size: 13px;
+      color: #7a5b16;
+    }
+
+    .xhs-notes p { margin: 2px 0; }
+
+    .xhs-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 18px 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px 18px;
+      align-content: start;
+      background: var(--color-bg, #f5f5f5);
+    }
+
+    .xhs-cell { display: flex; flex-direction: column; gap: 8px; }
+
+    .xhs-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+      background: #f9faf5;
+    }
+
+    .xhs-frame > .xhs-card { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+    .xhs-cell-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--color-tertiary, #888);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .xhs-dl {
+      border: 1px solid var(--color-light-border, #ddd);
+      background: var(--color-surface, #fff);
+      color: var(--color-primary, #111);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .xhs-dl:hover { border-color: var(--color-accent, #0066cc); }
+
+    .xhs-measure {
+      position: absolute;
+      left: -20000px;
+      top: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .xhs-overlay { padding: 0; }
+      .xhs-panel { border-radius: 0; }
+      .xhs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; padding: 12px; }
+    }
+
     .preview-title {
       font-size: 13px;
       font-weight: 500;
@@ -1919,6 +2059,18 @@
               >
             </label>
             <button
+              class="save-btn"
+              :disabled="!markdownInput.trim()"
+              @click="openXhsPanel"
+              title="把这篇文章拆成小红书图文卡片（3:4 图片）"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="3" width="12" height="16" rx="2"></rect>
+                <path d="M8 21h10a2 2 0 002-2V7"></path>
+              </svg>
+              <span class="save-btn-text">小红书卡片</span>
+            </button>
+            <button
               class="copy-btn copy-btn-x"
               :class="{ success: copyXSuccess }"
               :disabled="!renderedContent"
@@ -2063,6 +2215,30 @@
     <div class="history-overlay" :class="{ visible: showHistoryPanel }" @click="toggleHistoryPanel"></div>
 
 
+    <!-- 小红书图文卡片 -->
+    <div v-if="xhs.open" class="xhs-overlay" @click.self="closeXhsPanel">
+      <div class="xhs-panel" role="dialog" aria-modal="true" aria-label="小红书卡片">
+        <div class="xhs-bar">
+          <strong class="xhs-title">小红书卡片</strong>
+          <span class="xhs-count">{{ xhs.busy && !xhs.count ? '正在排版…' : (xhs.count ? '共 ' + xhs.count + ' 张' : '') }}</span>
+          <div class="xhs-seg" role="group" aria-label="分页方式">
+            <button type="button" :class="{ active: xhs.mode === 'whole' }" :aria-pressed="xhs.mode === 'whole'" @click="setXhsMode('whole')" title="放不下的段落整段挪到下一张">整段不拆</button>
+            <button type="button" :class="{ active: xhs.mode === 'fill' }" :aria-pressed="xhs.mode === 'fill'" @click="setXhsMode('fill')" title="每张尽量填满，段落可以跨页">铺满</button>
+          </div>
+          <span class="xhs-spacer"></span>
+          <button type="button" class="copy-btn" :disabled="xhs.busy || !xhs.count" @click="downloadAllXhsCards">{{ xhs.busyText || '全部下载' }}</button>
+          <button type="button" class="xhs-close" @click="closeXhsPanel" aria-label="关闭">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
+        <div v-if="xhs.notes.length" class="xhs-notes">
+          <p v-for="(n, i) in xhs.notes" :key="i">{{ n }}</p>
+        </div>
+        <div class="xhs-grid" ref="xhsGrid"></div>
+        <div class="xhs-measure" ref="xhsMeasure" aria-hidden="true"></div>
+      </div>
+    </div>
+
     <!-- Toast 提示 -->
     <div v-if="toast.show" class="toast" :class="toast.type">
       {{ toast.message }}
@@ -2073,7 +2249,7 @@
        会比上面已经 defer 的 markdown-it/vue 先同步执行，app.js 一开头就要用
        window.markdownit 和 Vue，届时还没定义会直接报错。defer 后四个脚本
        仍按文档顺序在 DOMContentLoaded 前依次执行，顺序跟原来一致。 -->
-  <script src="styles.js?v=4" defer></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="styles.js?v=5" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>

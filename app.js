@@ -584,6 +584,8 @@ const editorApp = createApp({
       // 随笔的强调色：朱红 / 青绿
       ESSAY_VARIANTS: ESSAY_VARIANTS,
       essayVariant: 'red',
+      // 小红书图文卡片
+      xhs: { open: false, mode: 'whole', count: 0, busy: false, busyText: '', notes: [] },
       turndownService: null,  // Turndown 服务实例
       isDraggingOver: false,  // 拖拽状态
       imageHostManager: new ImageHostManager(),  // 图床管理器（已废弃，保留兼容）
@@ -888,6 +890,188 @@ const editorApp = createApp({
         holder.parentNode.insertBefore(cap, holder.nextSibling);
       });
 
+    },
+
+    // ===== 小红书图文卡片 =====
+    // 卡片引擎和导出组件只在第一次打开面板时加载，不影响编辑器打开速度
+    loadScriptOnce(src) {
+      this._loadedScripts = this._loadedScripts || {};
+      if (!this._loadedScripts[src]) {
+        this._loadedScripts[src] = new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = () => { delete this._loadedScripts[src]; reject(new Error('加载失败：' + src)); };
+          document.head.appendChild(s);
+        });
+      }
+      return this._loadedScripts[src];
+    },
+
+    async ensureXhsLibs() {
+      await this.loadScriptOnce('vendor/html-to-image.min.js');
+      await this.loadScriptOnce('vendor/jszip.min.js');
+      await this.loadScriptOnce('xhs-cards.js?v=3');
+    },
+
+    async openXhsPanel() {
+      if (!this.markdownInput.trim()) return;
+      try {
+        const m = localStorage.getItem('xhsMode');
+        if (m === 'whole' || m === 'fill') this.xhs.mode = m;
+      } catch (e) {}
+      this.xhs.open = true;
+      if (!this._xhsKey) {
+        this._xhsKey = (e) => { if (e.key === 'Escape' && this.xhs.open) this.closeXhsPanel(); };
+        window.addEventListener('keydown', this._xhsKey);
+      }
+      await this.$nextTick();
+      this.renderXhsCards();
+    },
+
+    closeXhsPanel() {
+      this.xhs.open = false;
+      this.xhs.count = 0;
+      this.xhs.notes = [];
+      this._xhsCards = [];
+    },
+
+    setXhsMode(mode) {
+      if (this.xhs.mode === mode || this.xhs.busy) return;
+      this.xhs.mode = mode;
+      try { localStorage.setItem('xhsMode', mode); } catch (e) {}
+      this.renderXhsCards();
+    },
+
+    async renderXhsCards() {
+      const grid = this.$refs.xhsGrid;
+      const measure = this.$refs.xhsMeasure;
+      if (!grid || !measure) return;
+      this.xhs.busy = true;
+      this.xhs.count = 0;
+      this.xhs.notes = [];
+      grid.innerHTML = '';
+      measure.innerHTML = '';
+      try {
+        await this.ensureXhsLibs();
+        let html = this.md.render(this.preprocessMarkdown(this.markdownInput));
+        html = await this.processImageProtocol(html);   // img:// → 本地图片
+        const text = this.markdownInput;
+        const fontOk = await XhsCards.loadFontFor(text);
+        const now = new Date();
+        const date = String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0');
+        const { cards, notes } = await XhsCards.paginate(html, {
+          mode: this.xhs.mode,
+          header: { avatar: 'assets/xhs-avatar.jpg', name: '维小灿', date }
+        }, measure);
+        if (!this.xhs.open) return;
+
+        const tips = [];
+        if (!fontOk) tips.push('思源宋体没加载出来（可能是网络问题），现在显示的是系统字体，导出的图片也会是系统字体。');
+        if (notes.overLimit) tips.push(`一共 ${cards.length} 张，超过小红书单篇 18 张的上限。可以删减内容，或在 Markdown 里用 <!-- 分页 --> 分成两篇。`);
+        if (notes.externalImages) tips.push(`有 ${notes.externalImages} 张外链图片：如果图床不允许跨域，导出的图片里这张会是空白。粘贴或拖进编辑器的图片没有这个问题。`);
+        if (notes.brokenImages) tips.push(`有 ${notes.brokenImages} 张图片加载失败，卡片里会是空白。`);
+        this.xhs.notes = tips;
+
+        // 每张卡片按缩略图宽度缩放显示；卡片本身保持 1080×1440，导出时按原尺寸
+        cards.forEach((card, i) => {
+          const cell = document.createElement('div');
+          cell.className = 'xhs-cell';
+          const frame = document.createElement('div');
+          frame.className = 'xhs-frame';
+          frame.appendChild(card);
+          const foot = document.createElement('div');
+          foot.className = 'xhs-cell-foot';
+          const num = document.createElement('span');
+          num.textContent = `${i + 1} / ${cards.length}`;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'xhs-dl';
+          btn.textContent = '下载';
+          btn.addEventListener('click', () => this.downloadXhsCard(i));
+          foot.appendChild(num);
+          foot.appendChild(btn);
+          cell.appendChild(frame);
+          cell.appendChild(foot);
+          grid.appendChild(cell);
+        });
+        this._xhsCards = cards;
+        this.xhs.count = cards.length;
+        this.$nextTick(() => this.fitXhsThumbs());
+        if (!this._xhsResize) {
+          this._xhsResize = () => this.xhs.open && this.fitXhsThumbs();
+          window.addEventListener('resize', this._xhsResize);
+        }
+      } catch (error) {
+        console.error('生成小红书卡片失败:', error);
+        this.xhs.notes = ['生成卡片失败：' + error.message];
+      } finally {
+        this.xhs.busy = false;
+      }
+    },
+
+    fitXhsThumbs() {
+      const grid = this.$refs.xhsGrid;
+      if (!grid) return;
+      grid.querySelectorAll('.xhs-frame').forEach((frame) => {
+        const card = frame.firstElementChild;
+        if (card) card.style.transform = `scale(${frame.clientWidth / XhsCards.CARD.width})`;
+      });
+    },
+
+    xhsFileName(i) {
+      return `小红书卡片_${String(i + 1).padStart(2, '0')}.png`;
+    },
+
+    saveBlob(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    },
+
+    async downloadXhsCard(i) {
+      const cards = this._xhsCards || [];
+      if (!cards[i] || this.xhs.busy) return;
+      this.xhs.busy = true;
+      this.xhs.busyText = '导出中…';
+      try {
+        const blob = await XhsCards.exportCard(cards[i], cards);
+        this.saveBlob(blob, this.xhsFileName(i));
+      } catch (error) {
+        console.error('导出卡片失败:', error);
+        this.showToast('导出失败：' + error.message, 'error');
+      } finally {
+        this.xhs.busy = false;
+        this.xhs.busyText = '';
+      }
+    },
+
+    async downloadAllXhsCards() {
+      const cards = this._xhsCards || [];
+      if (!cards.length || this.xhs.busy) return;
+      this.xhs.busy = true;
+      try {
+        const zip = new JSZip();
+        for (let i = 0; i < cards.length; i++) {
+          this.xhs.busyText = `导出中 ${i + 1}/${cards.length}`;
+          zip.file(this.xhsFileName(i), await XhsCards.exportCard(cards[i], cards));
+        }
+        this.xhs.busyText = '打包中…';
+        const blob = await zip.generateAsync({ type: 'blob' });
+        this.saveBlob(blob, '小红书卡片.zip');
+        this.showToast(`已导出 ${cards.length} 张卡片`, 'success');
+      } catch (error) {
+        console.error('导出卡片失败:', error);
+        this.showToast('导出失败：' + error.message, 'error');
+      } finally {
+        this.xhs.busy = false;
+        this.xhs.busyText = '';
+      }
     },
 
     selectVariant(field, key) {
